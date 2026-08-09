@@ -7,8 +7,7 @@ from app.models import User
 from app.schemas import UserCreate, UserOut
 from app.security import hash_password
 
-from app.security 
-import hash_password, verify_password, create_access_token
+from app.security import hash_password, verify_password, create_access_token
 
 app = FastAPI()
 
