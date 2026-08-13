@@ -12,6 +12,9 @@ from app.security import hash_password, verify_password, create_access_token
 from fastapi.security import OAuth2PasswordBearer
 from app.security import decode_access_token
 
+from app.models import Monitor
+from app.schemas import MonitorCreate, MonitorOut
+
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -70,3 +73,28 @@ async def get_current_user(
 @app.get("/auth/me", response_model=UserOut)
 async def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+@app.post("/monitors", response_model=MonitorOut)
+async def create_monitor(
+    monitor_in: MonitorCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    new_monitor = Monitor(
+        url=monitor_in.url,
+        interval_seconds=monitor_in.interval_seconds,
+        user_id=current_user.id,
+    )
+    db.add(new_monitor)
+    await db.commit()
+    await db.refresh(new_monitor)
+    return new_monitor
+
+
+@app.get("/monitors", response_model=list[MonitorOut])
+async def list_monitors(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Monitor).where(Monitor.user_id == current_user.id))
+    return result.scalars().all()
