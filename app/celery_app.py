@@ -11,3 +11,5 @@ celery_app = Celery(
     broker=REDIS_URL,
     backend=REDIS_URL,
 )
+
+celery_app.autodiscover_tasks(["app"])
