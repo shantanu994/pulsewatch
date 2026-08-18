@@ -24,3 +24,12 @@ class Monitor(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+class CheckResult(Base):
+    __tablename__ = "check_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    monitor_id: Mapped[int] = mapped_column(ForeignKey("monitors.id"))
+    status_code: Mapped[int | None] = mapped_column(nullable=True)
+    is_up: Mapped[bool] = mapped_column()
+    checked_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
