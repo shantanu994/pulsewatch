@@ -23,3 +23,18 @@ def check_url(monitor_id: int, url: str):
     print(f"Checked {url} -> up={is_up}, status={status_code}")
     asyncio.run(_save_result(monitor_id, status_code, is_up))
     return {"monitor_id": monitor_id, "status_code": status_code, "up": is_up}
+
+from sqlalchemy import select
+from app.models import Monitor
+
+async def _get_active_monitors():
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Monitor).where(Monitor.is_active == True))
+        return result.scalars().all()
+
+@celery_app.task
+def run_all_checks():
+    monitors = asyncio.run(_get_active_monitors())
+    for m in monitors:
+        check_url.delay(m.id, m.url)
+    return f"Queued {len(monitors)} checks"
