@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -20,6 +21,15 @@ class MonitorOut(BaseModel):
     url: str
     interval_seconds: int
     is_active: bool
+
+    class Config:
+        from_attributes = True
+
+class CheckResultOut(BaseModel):
+    id: int
+    status_code: int | None
+    is_up: bool
+    checked_at: datetime
 
     class Config:
         from_attributes = True
