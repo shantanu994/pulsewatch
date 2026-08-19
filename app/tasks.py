@@ -1,14 +1,7 @@
 import httpx
-import asyncio
 from app.celery_app import celery_app
-from app.database import AsyncSessionLocal
-from app.models import CheckResult
-
-async def _save_result(monitor_id: int, status_code: int | None, is_up: bool):
-    async with AsyncSessionLocal() as db:
-        result = CheckResult(monitor_id=monitor_id, status_code=status_code, is_up=is_up)
-        db.add(result)
-        await db.commit()
+from app.database import SyncSessionLocal
+from app.models import CheckResult, Monitor
 
 @celery_app.task
 def check_url(monitor_id: int, url: str):
@@ -21,20 +14,21 @@ def check_url(monitor_id: int, url: str):
         is_up = False
 
     print(f"Checked {url} -> up={is_up}, status={status_code}")
-    asyncio.run(_save_result(monitor_id, status_code, is_up))
+
+    with SyncSessionLocal() as db:
+        result = CheckResult(monitor_id=monitor_id, status_code=status_code, is_up=is_up)
+        db.add(result)
+        db.commit()
+
     return {"monitor_id": monitor_id, "status_code": status_code, "up": is_up}
 
-from sqlalchemy import select
-from app.models import Monitor
-
-async def _get_active_monitors():
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(Monitor).where(Monitor.is_active == True))
-        return result.scalars().all()
 
 @celery_app.task
 def run_all_checks():
-    monitors = asyncio.run(_get_active_monitors())
+    with SyncSessionLocal() as db:
+        monitors = db.query(Monitor).filter(Monitor.is_active == True).all()
+
     for m in monitors:
         check_url.delay(m.id, m.url)
+
     return f"Queued {len(monitors)} checks"
