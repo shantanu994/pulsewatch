@@ -17,3 +17,10 @@ class Base(DeclarativeBase):
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+SYNC_DATABASE_URL = DATABASE_URL.replace("+asyncpg", "")
+sync_engine = create_engine(SYNC_DATABASE_URL)
+SyncSessionLocal = sessionmaker(bind=sync_engine)
