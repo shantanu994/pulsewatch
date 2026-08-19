@@ -15,6 +15,9 @@ from app.security import decode_access_token
 from app.models import Monitor
 from app.schemas import MonitorCreate, MonitorOut
 
+from app.models import CheckResult
+from app.schemas import CheckResultOut
+
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -97,4 +100,24 @@ async def list_monitors(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Monitor).where(Monitor.user_id == current_user.id))
+    return result.scalars().all()
+
+@app.get("/monitors/{monitor_id}/results", response_model=list[CheckResultOut])
+async def get_monitor_results(
+    monitor_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    monitor_check = await db.execute(
+        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+    )
+    monitor = monitor_check.scalar_one_or_none()
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    result = await db.execute(
+        select(CheckResult)
+        .where(CheckResult.monitor_id == monitor_id)
+        .order_by(CheckResult.checked_at.desc())
+    )
     return result.scalars().all()
