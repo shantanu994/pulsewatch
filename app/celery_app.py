@@ -13,3 +13,10 @@ celery_app = Celery(
 )
 
 celery_app.autodiscover_tasks(["app"])
+
+celery_app.conf.beat_schedule = {
+    "run-all-checks-every-minute": {
+        "task": "app.tasks.run_all_checks",
+        "schedule": 60.0,
+    },
+}
