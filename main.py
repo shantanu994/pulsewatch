@@ -121,3 +121,34 @@ async def get_monitor_results(
         .order_by(CheckResult.checked_at.desc())
     )
     return result.scalars().all()
+
+from datetime import datetime, timedelta
+from app.models import CheckResult
+
+@app.get("/monitors/{monitor_id}/uptime")
+async def get_uptime(
+    monitor_id: int,
+    hours: int = 24,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    monitor_result = await db.execute(
+        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+    )
+    monitor = monitor_result.scalar_one_or_none()
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    since = datetime.utcnow() - timedelta(hours=hours)
+    results = await db.execute(
+        select(CheckResult).where(CheckResult.monitor_id == monitor_id, CheckResult.checked_at >= since)
+    )
+    checks = results.scalars().all()
+
+    if not checks:
+        return {"monitor_id": monitor_id, "uptime_percent": None, "total_checks": 0}
+
+    up_count = sum(1 for c in checks if c.is_up)
+    uptime_percent = round((up_count / len(checks)) * 100, 2)
+
+    return {"monitor_id": monitor_id, "uptime_percent": uptime_percent, "total_checks": len(checks)}
