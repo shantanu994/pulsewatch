@@ -152,3 +152,44 @@ async def get_uptime(
     uptime_percent = round((up_count / len(checks)) * 100, 2)
 
     return {"monitor_id": monitor_id, "uptime_percent": uptime_percent, "total_checks": len(checks)}
+
+@app.patch("/monitors/{monitor_id}", response_model=MonitorOut)
+async def update_monitor(
+    monitor_id: int,
+    update: MonitorUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+    )
+    monitor = result.scalar_one_or_none()
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    if update.is_active is not None:
+        monitor.is_active = update.is_active
+    if update.interval_seconds is not None:
+        monitor.interval_seconds = update.interval_seconds
+
+    await db.commit()
+    await db.refresh(monitor)
+    return monitor
+
+
+@app.delete("/monitors/{monitor_id}")
+async def delete_monitor(
+    monitor_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+    )
+    monitor = result.scalar_one_or_none()
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found")
+
+    await db.delete(monitor)
+    await db.commit()
+    return {"detail": "Monitor deleted"}
