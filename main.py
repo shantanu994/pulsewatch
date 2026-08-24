@@ -17,6 +17,7 @@ from app.schemas import MonitorCreate, MonitorOut
 
 from app.models import CheckResult
 from app.schemas import CheckResultOut
+from app.schemas import MonitorUpdate
 
 app = FastAPI()
 
