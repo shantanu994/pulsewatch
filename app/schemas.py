@@ -33,3 +33,7 @@ class CheckResultOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MonitorUpdate(BaseModel):
+    is_active: bool | None = None
+    interval_seconds: int | None = None
