@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import AddMonitorForm from "../components/AddMonitorForm";
 
-export default function Dashboard({ onLogout }) {
+export default function Dashboard({ onLogout, onSelectMonitor }) {
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,7 +54,8 @@ export default function Dashboard({ onLogout }) {
           {monitors.map((m) => (
             <div
               key={m.id}
-              className="bg-panel border border-white/5 rounded-xl px-5 py-4 flex items-center justify-between"
+              onClick={() => onSelectMonitor(m)}
+              className="bg-panel border border-white/5 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-signal/30 transition"
             >
               <div>
                 <p className="text-offwhite font-medium">{m.url}</p>
