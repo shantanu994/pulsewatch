@@ -13,7 +13,9 @@ async function request(path, options = {}) {
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: "Something went wrong" }));
+    const error = await res
+      .json()
+      .catch(() => ({ detail: "Something went wrong" }));
     throw new Error(error.detail || "Request failed");
   }
 
@@ -22,10 +24,21 @@ async function request(path, options = {}) {
 
 export const api = {
   login: (email, password) =>
-    request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
   signup: (email, password) =>
-    request("/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
   getMonitors: () => request("/monitors"),
   createMonitor: (url, interval_seconds) =>
-    request("/monitors", { method: "POST", body: JSON.stringify({ url, interval_seconds }) }),
+    request("/monitors", {
+      method: "POST",
+      body: JSON.stringify({ url, interval_seconds }),
+    }),
+  getMonitorUptime: (id) => request(`/monitors/{monitor_id}/results`),
+  getMonitorHistory: (id) => request(`/monitors/{monitor_id}/results`),
 };
