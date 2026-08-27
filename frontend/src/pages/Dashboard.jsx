@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import AddMonitorForm from "../components/AddMonitorForm";
 
 export default function Dashboard({ onLogout }) {
   const [monitors, setMonitors] = useState([]);
@@ -40,6 +41,7 @@ export default function Dashboard({ onLogout }) {
             Log out
           </button>
         </div>
+        <AddMonitorForm onCreated={loadMonitors} />
 
         {loading && <p className="text-slate">Loading monitors...</p>}
         {error && <p className="text-alert">{error}</p>}
