@@ -1,31 +1,36 @@
 import { useState } from "react";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import MonitorDetail from "./pages/MonitorDetail";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [authMode, setAuthMode] = useState("login");
   const [selectedMonitor, setSelectedMonitor] = useState(null);
 
   if (!loggedIn) {
-    return <Login onLogin={() => setLoggedIn(true)} />;
-  }
-
-  if (selectedMonitor) {
+    if (authMode === "signup") {
+      return (
+        <Signup
+          onSignup={() => setLoggedIn(true)}
+          onSwitchToLogin={() => setAuthMode("login")}
+        />
+      );
+    }
     return (
-      <MonitorDetail
-        monitor={selectedMonitor}
-        onBack={() => setSelectedMonitor(null)}
+      <Login
+        onLogin={() => setLoggedIn(true)}
+        onSwitchToSignup={() => setAuthMode("signup")}
       />
     );
   }
 
-  return (
-    <Dashboard
-      onLogout={() => setLoggedIn(false)}
-      onSelectMonitor={setSelectedMonitor}
-    />
-  );
+  if (selectedMonitor) {
+    return <MonitorDetail monitor={selectedMonitor} onBack={() => setSelectedMonitor(null)} />;
+  }
+
+  return <Dashboard onLogout={() => setLoggedIn(false)} onSelectMonitor={setSelectedMonitor} />;
 }
 
 export default App;
