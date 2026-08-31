@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 
-export default function Login({ onLogin, onSwitchToSignup }) {
+export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,7 +16,7 @@ export default function Login({ onLogin, onSwitchToSignup }) {
     try {
       const data = await api.login(email, password);
       localStorage.setItem("token", data.access_token);
-      onLogin();
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -28,12 +30,8 @@ export default function Login({ onLogin, onSwitchToSignup }) {
         onSubmit={handleSubmit}
         className="w-full max-w-sm bg-panel rounded-2xl p-8 border border-white/5"
       >
-        <h1 className="font-display text-2xl text-offwhite mb-1">
-          Welcome back
-        </h1>
-        <p className="text-slate text-sm mb-6">
-          Log in to your PulseWatch account
-        </p>
+        <h1 className="font-display text-2xl text-offwhite mb-1">Welcome back</h1>
+        <p className="text-slate text-sm mb-6">Log in to your PulseWatch account</p>
 
         <label className="block text-sm text-slate mb-1">Email</label>
         <input
@@ -62,15 +60,12 @@ export default function Login({ onLogin, onSwitchToSignup }) {
         >
           {loading ? "Logging in..." : "Log in"}
         </button>
+
         <p className="text-slate text-sm text-center mt-4">
           Don't have an account?{" "}
-          <button
-            type="button"
-            onClick={onSwitchToSignup}
-            className="text-signal hover:underline"
-          >
+          <Link to="/signup" className="text-signal hover:underline">
             Sign up
-          </button>
+          </Link>
         </p>
       </form>
     </div>
