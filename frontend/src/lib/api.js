@@ -39,6 +39,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ url, interval_seconds }),
     }),
-  getMonitorUptime: (id) => request(`/monitors/${id}/results`),
+  updateMonitor: (id, updates) =>
+    request(`/monitors/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
+  deleteMonitor: (id) =>
+    request(`/monitors/${id}`, { method: "DELETE" }),
+  getMonitorUptime: (id, hours = 24) =>
+    request(`/monitors/${id}/uptime?hours=${hours}`),
   getMonitorHistory: (id) => request(`/monitors/${id}/results`),
 };
