@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 
-export default function Signup({ onSignup, onSwitchToLogin }) {
+export default function Signup() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,7 +24,7 @@ export default function Signup({ onSignup, onSwitchToLogin }) {
       await api.signup(email, password);
       const data = await api.login(email, password);
       localStorage.setItem("token", data.access_token);
-      onSignup();
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -79,13 +81,9 @@ export default function Signup({ onSignup, onSwitchToLogin }) {
 
         <p className="text-slate text-sm text-center mt-4">
           Already have an account?{" "}
-          <button
-            type="button"
-            onClick={onSwitchToLogin}
-            className="text-signal hover:underline"
-          >
+          <Link to="/login" className="text-signal hover:underline">
             Log in
-          </button>
+          </Link>
         </p>
       </form>
     </div>
