@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-export default function MonitorDetail({ monitor, onBack }) {
+export default function MonitorDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [monitor, setMonitor] = useState(null);
   const [uptime, setUptime] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,16 +14,19 @@ export default function MonitorDetail({ monitor, onBack }) {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [id]);
 
   async function loadData() {
     setLoading(true);
     setError("");
     try {
-      const [uptimeData, historyData] = await Promise.all([
-        api.getMonitorUptime(monitor.id),
-        api.getMonitorHistory(monitor.id),
+      const [monitors, uptimeData, historyData] = await Promise.all([
+        api.getMonitors(),
+        api.getMonitorUptime(id),
+        api.getMonitorHistory(id),
       ]);
+      const found = monitors.find((m) => String(m.id) === id);
+      setMonitor(found || null);
       setUptime(uptimeData);
       setHistory(historyData);
     } catch (err) {
@@ -32,22 +40,22 @@ export default function MonitorDetail({ monitor, onBack }) {
     <div className="min-h-screen bg-ink px-6 py-10">
       <div className="max-w-3xl mx-auto">
         <button
-          onClick={onBack}
+          onClick={() => navigate("/dashboard")}
           className="text-slate text-sm hover:text-offwhite transition mb-6"
         >
           ← Back to monitors
         </button>
 
-        <h1 className="font-display text-2xl text-offwhite mb-1">{monitor.url}</h1>
-        <p className="text-slate text-sm font-mono mb-6">
-          Checks every {monitor.interval_seconds}s
-        </p>
-
         {loading && <p className="text-slate">Loading...</p>}
         {error && <p className="text-alert">{error}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && monitor && (
           <>
+            <h1 className="font-display text-2xl text-offwhite mb-1">{monitor.url}</h1>
+            <p className="text-slate text-sm font-mono mb-6">
+              Checks every {monitor.interval_seconds}s
+            </p>
+
             <div className="bg-panel border border-white/5 rounded-xl p-5 mb-6">
               <p className="text-slate text-sm mb-1">Uptime (last 24h)</p>
               <p className="font-mono text-3xl text-signal">

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import AddMonitorForm from "../components/AddMonitorForm";
 
-export default function Dashboard({ onLogout, onSelectMonitor }) {
+export default function Dashboard() {
+  const navigate = useNavigate();
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,23 +26,13 @@ export default function Dashboard({ onLogout, onSelectMonitor }) {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    onLogout();
-  }
-
   return (
     <div className="min-h-screen bg-ink px-6 py-10">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-display text-2xl text-offwhite">Your Monitors</h1>
-          <button
-            onClick={handleLogout}
-            className="text-slate text-sm hover:text-offwhite transition"
-          >
-            Log out
-          </button>
         </div>
+
         <AddMonitorForm onCreated={loadMonitors} />
 
         {loading && <p className="text-slate">Loading monitors...</p>}
@@ -54,7 +46,7 @@ export default function Dashboard({ onLogout, onSelectMonitor }) {
           {monitors.map((m) => (
             <div
               key={m.id}
-              onClick={() => onSelectMonitor(m)}
+              onClick={() => navigate(`/monitors/${m.id}`)}
               className="bg-panel border border-white/5 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-signal/30 transition"
             >
               <div>
