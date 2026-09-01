@@ -4,6 +4,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import MonitorDetail from "./pages/MonitorDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/layout/Layout";
 
 function App() {
   return (
@@ -11,22 +12,18 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/monitors/:id"
-          element={
-            <ProtectedRoute>
-              <MonitorDetail />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/monitors/:id" element={<MonitorDetail />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
