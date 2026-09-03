@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import AddMonitorForm from "../components/AddMonitorForm";
+import MonitorCard from "../components/dashboard/MonitorCard";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadMonitors();
@@ -26,11 +26,44 @@ export default function Dashboard() {
     }
   }
 
+  const filtered = monitors.filter((m) =>
+    m.url.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const activeCount = monitors.filter((m) => m.is_active).length;
+  const pausedCount = monitors.filter((m) => !m.is_active).length;
+
   return (
     <div className="min-h-screen bg-ink px-6 py-10">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-2xl text-offwhite">Your Monitors</h1>
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="font-display text-2xl text-offwhite mb-1">Overview</h1>
+          <p className="text-slate text-sm">Monitor your infrastructure at a glance.</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-panel border border-white/5 rounded-xl p-5">
+            <p className="font-mono text-2xl text-offwhite">{monitors.length}</p>
+            <p className="text-slate text-xs mt-1">Total Monitors</p>
+          </div>
+          <div className="bg-panel border border-white/5 rounded-xl p-5">
+            <p className="font-mono text-2xl text-signal">{activeCount}</p>
+            <p className="text-slate text-xs mt-1">Active</p>
+          </div>
+          <div className="bg-panel border border-white/5 rounded-xl p-5">
+            <p className="font-mono text-2xl text-slate">{pausedCount}</p>
+            <p className="text-slate text-xs mt-1">Paused</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="Search monitors..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 max-w-xs bg-panel border border-white/10 rounded-lg px-3 py-2 text-sm text-offwhite outline-none focus:border-signal transition"
+          />
         </div>
 
         <AddMonitorForm onCreated={loadMonitors} />
@@ -38,33 +71,15 @@ export default function Dashboard() {
         {loading && <p className="text-slate">Loading monitors...</p>}
         {error && <p className="text-alert">{error}</p>}
 
-        {!loading && !error && monitors.length === 0 && (
-          <p className="text-slate">No monitors yet.</p>
+        {!loading && !error && filtered.length === 0 && (
+          <p className="text-slate">
+            {monitors.length === 0 ? "No monitors yet." : "No monitors match your search."}
+          </p>
         )}
 
-        <div className="space-y-3">
-          {monitors.map((m) => (
-            <div
-              key={m.id}
-              onClick={() => navigate(`/monitors/${m.id}`)}
-              className="bg-panel border border-white/5 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-signal/30 transition"
-            >
-              <div>
-                <p className="text-offwhite font-medium">{m.url}</p>
-                <p className="text-slate text-sm font-mono">
-                  Checks every {m.interval_seconds}s
-                </p>
-              </div>
-              <span
-                className={`text-xs font-mono px-2 py-1 rounded-full ${
-                  m.is_active
-                    ? "bg-signal/10 text-signal"
-                    : "bg-slate/10 text-slate"
-                }`}
-              >
-                {m.is_active ? "ACTIVE" : "PAUSED"}
-              </span>
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          {filtered.map((m) => (
+            <MonitorCard key={m.id} monitor={m} />
           ))}
         </div>
       </div>
