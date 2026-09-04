@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../lib/api";
+import { useToast } from "../lib/toast";
 
 export default function AddMonitorForm({ onCreated }) {
   const [url, setUrl] = useState("");
@@ -7,6 +8,7 @@ export default function AddMonitorForm({ onCreated }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -18,8 +20,10 @@ export default function AddMonitorForm({ onCreated }) {
       setInterval(300);
       setOpen(false);
       onCreated();
+      showToast("Monitor created successfully");
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -62,7 +66,9 @@ export default function AddMonitorForm({ onCreated }) {
         className="w-full mb-4 bg-ink border border-white/10 rounded-lg px-3 py-2 text-offwhite outline-none focus:border-signal transition"
       />
 
-      <label className="block text-sm text-slate mb-1">Check interval (seconds)</label>
+      <label className="block text-sm text-slate mb-1">
+        Check interval (seconds)
+      </label>
       <input
         type="number"
         value={interval}
