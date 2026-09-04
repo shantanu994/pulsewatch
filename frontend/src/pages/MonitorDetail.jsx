@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { api } from "../lib/api";
+import { useToast } from "../lib/toast";
 
 export default function MonitorDetail() {
   const { id } = useParams();
@@ -22,6 +23,7 @@ export default function MonitorDetail() {
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -50,10 +52,14 @@ export default function MonitorDetail() {
   async function handleTogglePause() {
     setActionLoading(true);
     try {
-      const updated = await api.updateMonitor(id, { is_active: !monitor.is_active });
+      const updated = await api.updateMonitor(id, {
+        is_active: !monitor.is_active,
+      });
       setMonitor(updated);
+      showToast(updated.is_active ? "Monitor resumed" : "Monitor paused");
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
     } finally {
       setActionLoading(false);
     }
@@ -63,9 +69,11 @@ export default function MonitorDetail() {
     setActionLoading(true);
     try {
       await api.deleteMonitor(id);
+      showToast("Monitor deleted");
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
+      showToast(err.message, "error");
       setActionLoading(false);
     }
   }
@@ -83,9 +91,12 @@ export default function MonitorDetail() {
       statusCode: h.status_code,
     }));
 
-  const lastCheck = history.length > 0
-    ? [...history].sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at))[0]
-    : null;
+  const lastCheck =
+    history.length > 0
+      ? [...history].sort(
+          (a, b) => new Date(b.checked_at) - new Date(a.checked_at),
+        )[0]
+      : null;
   const isDown = lastCheck ? !lastCheck.is_up : false;
 
   return (
@@ -111,8 +122,8 @@ export default function MonitorDetail() {
                       !monitor.is_active
                         ? "bg-slate"
                         : isDown
-                        ? "bg-alert"
-                        : "bg-signal"
+                          ? "bg-alert"
+                          : "bg-signal"
                     }`}
                   />
                   <span
@@ -120,14 +131,20 @@ export default function MonitorDetail() {
                       !monitor.is_active
                         ? "text-slate"
                         : isDown
-                        ? "text-alert"
-                        : "text-signal"
+                          ? "text-alert"
+                          : "text-signal"
                     }`}
                   >
-                    {!monitor.is_active ? "PAUSED" : isDown ? "DOWN" : "OPERATIONAL"}
+                    {!monitor.is_active
+                      ? "PAUSED"
+                      : isDown
+                        ? "DOWN"
+                        : "OPERATIONAL"}
                   </span>
                 </div>
-                <h1 className="font-display text-2xl text-offwhite">{monitor.url}</h1>
+                <h1 className="font-display text-2xl text-offwhite">
+                  {monitor.url}
+                </h1>
               </div>
 
               <div className="flex gap-2">
@@ -166,7 +183,9 @@ export default function MonitorDetail() {
               </div>
               <div className="bg-panel border border-white/5 rounded-xl p-5">
                 <p className="font-mono text-2xl text-offwhite">
-                  {lastCheck ? new Date(lastCheck.checked_at).toLocaleTimeString() : "—"}
+                  {lastCheck
+                    ? new Date(lastCheck.checked_at).toLocaleTimeString()
+                    : "—"}
                 </p>
                 <p className="text-slate text-xs mt-1">Last Checked</p>
               </div>
@@ -196,7 +215,9 @@ export default function MonitorDetail() {
                       labelStyle={{ color: "#8B98A5" }}
                       formatter={(value, name, props) => [
                         `${value === 1 ? "UP" : "DOWN"}${
-                          props.payload.statusCode ? ` (${props.payload.statusCode})` : ""
+                          props.payload.statusCode
+                            ? ` (${props.payload.statusCode})`
+                            : ""
                         }`,
                         "Status",
                       ]}
@@ -238,7 +259,9 @@ export default function MonitorDetail() {
                     </span>
                     <span
                       className={`text-xs font-mono px-2 py-1 rounded-full ${
-                        h.is_up ? "bg-signal/10 text-signal" : "bg-alert/10 text-alert"
+                        h.is_up
+                          ? "bg-signal/10 text-signal"
+                          : "bg-alert/10 text-alert"
                       }`}
                     >
                       {h.is_up ? "UP" : "DOWN"}
@@ -253,10 +276,12 @@ export default function MonitorDetail() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
           <div className="bg-panel border border-white/10 rounded-xl p-6 max-w-sm w-full">
-            <h3 className="text-offwhite font-medium mb-2">Delete this monitor?</h3>
+            <h3 className="text-offwhite font-medium mb-2">
+              Delete this monitor?
+            </h3>
             <p className="text-slate text-sm mb-6">
-              This permanently removes the monitor and its check history. This cannot be
-              undone.
+              This permanently removes the monitor and its check history. This
+              cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
