@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { api } from "../lib/api";
 import { useToast } from "../lib/toast";
+import Skeleton from "../components/ui/Skeleton";
 
 export default function MonitorDetail() {
   const { id } = useParams();
@@ -109,7 +110,18 @@ export default function MonitorDetail() {
           ← Back to monitors
         </button>
 
-        {loading && <p className="text-slate">Loading...</p>}
+        {loading && (
+          <div>
+            <Skeleton className="h-4 w-16 mb-2" />
+            <Skeleton className="h-8 w-64 mb-6" />
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+            <Skeleton className="h-48 w-full mb-6" />
+          </div>
+        )}
         {error && <p className="text-alert mb-4">{error}</p>}
 
         {!loading && monitor && (
