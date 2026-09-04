@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
+import { motion } from "framer-motion";
 
 function timeAgo(dateString) {
   if (!dateString) return "never";
@@ -43,28 +44,33 @@ export default function MonitorCard({ monitor }) {
   const statusLabel = !monitor.is_active
     ? "PAUSED"
     : isDown
-    ? "DOWN"
-    : "OPERATIONAL";
+      ? "DOWN"
+      : "OPERATIONAL";
   const statusColor = !monitor.is_active
     ? "text-slate"
     : isDown
-    ? "text-alert"
-    : "text-signal";
+      ? "text-alert"
+      : "text-signal";
   const dotColor = !monitor.is_active
     ? "bg-slate"
     : isDown
-    ? "bg-alert"
-    : "bg-signal";
+      ? "bg-alert"
+      : "bg-signal";
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
       onClick={() => navigate(`/monitors/${monitor.id}`)}
       className="bg-panel border border-white/5 rounded-xl p-5 cursor-pointer hover:border-signal/30 transition group"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-          <span className={`text-xs font-mono ${statusColor}`}>{statusLabel}</span>
+          <span className={`text-xs font-mono ${statusColor}`}>
+            {statusLabel}
+          </span>
         </div>
         <span className="text-slate text-xs opacity-0 group-hover:opacity-100 transition">
           View →
@@ -82,12 +88,14 @@ export default function MonitorCard({ monitor }) {
         </div>
         <div>
           <p className="font-mono text-lg text-offwhite">
-            {loading ? "—" : uptime?.total_checks ?? 0}
+            {loading ? "—" : (uptime?.total_checks ?? 0)}
           </p>
           <p className="text-slate text-xs">Checks</p>
         </div>
         <div>
-          <p className="font-mono text-lg text-offwhite">{monitor.interval_seconds}s</p>
+          <p className="font-mono text-lg text-offwhite">
+            {monitor.interval_seconds}s
+          </p>
           <p className="text-slate text-xs">Interval</p>
         </div>
       </div>
@@ -95,6 +103,6 @@ export default function MonitorCard({ monitor }) {
       <p className="text-slate text-xs mt-3 font-mono">
         Last checked {loading ? "—" : timeAgo(lastCheck?.checked_at)}
       </p>
-    </div>
+    </motion.div>
   );
 }
