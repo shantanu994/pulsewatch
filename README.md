@@ -1,6 +1,6 @@
 # PulseWatch
 
-A distributed uptime-monitoring platform. Register a URL, inspect recent check history and uptime, and receive email alerts when a monitored URL transitions from healthy to down.
+PulseWatch is a distributed uptime-monitoring platform. Register a URL, inspect recent check history and uptime, and receive email alerts when a monitored URL transitions from healthy to down.
 
 ## Features
 
@@ -8,8 +8,9 @@ A distributed uptime-monitoring platform. Register a URL, inspect recent check h
 - Create and manage monitors (URLs to watch)
 - Automatic scheduled health checks via Celery Beat
 - Uptime percentage calculation
-- Email alerts on downtime (with spam prevention — only alerts on state change)
+- Email alerts on downtime (with spam prevention - only alerts on state change)
 - Monitor history, pause/resume, and deletion from the web dashboard
+- Responsive React dashboard with authentication, monitor cards, status history, and uptime charts
 
 ## Tech Stack
 
@@ -22,36 +23,37 @@ A distributed uptime-monitoring platform. Register a URL, inspect recent check h
 
 ## Architecture
 
-PulseWatch is built around a FastAPI backend that handles authentication and monitor management, a PostgreSQL database for persistent state, and Redis/Celery workers that schedule periodic checks and trigger email alerts when a monitor transitions from healthy to down.
+PulseWatch uses a FastAPI backend for authentication and monitor management, PostgreSQL for persistent state, and Redis with Celery for scheduled health checks. Celery Beat dispatches active monitors every 60 seconds; a Celery worker checks each URL, records the result, and sends an email when a monitor changes from up to down.
 
 ## Prerequisites
 
-- Python 3.9+
-- Node.js 16+ (for frontend)
+- Python 3.10+
+- Node.js 18+ (for frontend)
 - PostgreSQL 16 (provided by Docker Compose)
 - Redis 7 (provided by Docker Compose)
 - Docker & Docker Compose
 
 ## Environment Setup
 
-1. Clone the repo.
-2. Copy `.env.example` to `.env` and configure:
-   - `DATABASE_URL` — PostgreSQL connection string
-   - `REDIS_URL` — Redis connection URL
-   - `SECRET_KEY` — JWT secret key
-   - `MAIL_USERNAME` and `MAIL_PASSWORD` — SMTP credentials for email alerts
-   - `MAIL_FROM` — Sender email address
-   - `MAIL_SERVER` — SMTP server hostname
-   - `MAIL_PORT` — SMTP server port
+1. Clone the repository.
+2. Copy `.env.example` to `.env`.
+3. Set the required database and JWT settings, then add SMTP settings if email alerts are needed:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `REDIS_URL` - Redis connection URL (defaults to `redis://localhost:6379/0`)
+   - `SECRET_KEY` - long, random JWT signing key
+   - `MAIL_USERNAME` and `MAIL_PASSWORD` - SMTP credentials
+   - `MAIL_FROM` - sender email address
+   - `MAIL_SERVER` - SMTP server hostname
+   - `MAIL_PORT` - SMTP server port
 
-The included Docker Compose services use these local development values:
+The included Docker Compose services use these local development values. Add `REDIS_URL` to `.env` when using the local Redis container:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://pulsewatch:pulsewatch123@localhost:5432/pulsewatch
 REDIS_URL=redis://localhost:6379/0
 ```
 
-Use a long, random value for `SECRET_KEY`. Do not commit `.env` or real SMTP credentials.
+Use a long, random value for `SECRET_KEY`. Do not commit `.env` or real SMTP credentials. The application expects `DATABASE_URL` to be set before starting the backend.
 
 ## Running Locally
 
@@ -78,13 +80,18 @@ In separate terminals, run:
 3. Start dev server: `npm run dev`
 4. Access the dashboard at `http://localhost:5173`
 
-Beat runs the scheduler every 60 seconds and queues checks for active monitors. New monitors default to a 300-second interval in the data model; the current scheduler dispatches all active monitors on each run.
+Beat runs the scheduler every 60 seconds and queues checks for active monitors. New monitors default to a 300-second interval in the data model; the current scheduler dispatches every active monitor on each run.
+
+### Dashboard workflow
+
+The frontend is a React/Vite application. Sign up or log in, add a URL, then open a monitor to review uptime and recent check results. Monitors can be paused, resumed, updated, or deleted from the dashboard.
 
 ## API Endpoints
 
 - `POST /auth/signup` — create account
 - `POST /auth/login` — get access token
 - `GET /auth/me` — current user info (protected)
+- `GET /` — service health message
 - `POST /monitors` — create a monitor (protected)
 - `GET /monitors` — list your monitors (protected)
 - `GET /monitors/{id}/results` — recent check history (protected)
@@ -109,6 +116,8 @@ Run the frontend checks from the `frontend` directory:
 npm run lint
 npm run build
 ```
+
+The frontend development server expects the API at `http://127.0.0.1:8000` and is available at `http://localhost:5173`.
 
 ## Project Structure
 
