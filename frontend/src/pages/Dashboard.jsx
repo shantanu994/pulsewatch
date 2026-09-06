@@ -91,14 +91,32 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-        {error && <p className="text-alert">{error}</p>}
+        {error && !loading && (
+          <div className="bg-panel border border-alert/20 rounded-xl p-8 text-center">
+            <p className="text-offwhite font-medium mb-1">
+              Unable to load your monitors.
+            </p>
+            <p className="text-slate text-sm mb-4">{error}</p>
+            <button
+              onClick={loadMonitors}
+              className="text-sm px-4 py-2 rounded-lg bg-signal text-ink font-medium hover:opacity-90 transition"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
         {!loading && !error && filtered.length === 0 && (
-          <p className="text-slate">
-            {monitors.length === 0
-              ? "No monitors yet."
-              : "No monitors match your search."}
-          </p>
+          <div className="bg-panel border border-white/5 rounded-xl p-8 text-center">
+            <p className="text-offwhite font-medium mb-1">
+              {monitors.length === 0 ? "No monitors yet" : "No matches found"}
+            </p>
+            <p className="text-slate text-sm">
+              {monitors.length === 0
+                ? "Add your first monitor above to start tracking uptime."
+                : "Try a different search term."}
+            </p>
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-4">
