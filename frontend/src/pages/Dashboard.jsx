@@ -74,7 +74,7 @@ export default function Dashboard() {
         <AddMonitorForm onCreated={loadMonitors} />
 
         {loading && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -119,7 +119,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map((m) => (
             <MonitorCard key={m.id} monitor={m} />
           ))}
