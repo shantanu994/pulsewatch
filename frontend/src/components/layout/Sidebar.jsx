@@ -12,7 +12,7 @@ export default function Sidebar() {
   }
 
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-signal ${
       isActive
         ? "bg-signal/10 text-signal"
         : "text-slate hover:text-offwhite hover:bg-white/5"
@@ -25,7 +25,11 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1">
-        <NavLink to="/dashboard" className={linkClass} onClick={() => setMobileOpen(false)}>
+        <NavLink
+          to="/dashboard"
+          className={linkClass}
+          onClick={() => setMobileOpen(false)}
+        >
           <LayoutDashboard size={18} />
           Overview
         </NavLink>
