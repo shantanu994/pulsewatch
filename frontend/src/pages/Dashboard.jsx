@@ -14,6 +14,16 @@ export default function Dashboard() {
     loadMonitors();
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "r" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
+        loadMonitors();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   async function loadMonitors() {
     setLoading(true);
     setError("");
