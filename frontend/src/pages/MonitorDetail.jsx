@@ -12,6 +12,7 @@ import {
 import { api } from "../lib/api";
 import { useToast } from "../lib/toast";
 import Skeleton from "../components/ui/Skeleton";
+import { Copy, Check } from "lucide-react";
 
 export default function MonitorDetail() {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export default function MonitorDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { showToast } = useToast();
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -77,6 +79,12 @@ export default function MonitorDetail() {
       showToast(err.message, "error");
       setActionLoading(false);
     }
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(monitor.url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   // Turn raw check history into chart-friendly data.
@@ -154,9 +162,22 @@ export default function MonitorDetail() {
                         : "OPERATIONAL"}
                   </span>
                 </div>
-                <h1 className="font-display text-2xl text-offwhite">
-                  {monitor.url}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-2xl text-offwhite">
+                    {monitor.url}
+                  </h1>
+                  <button
+                    onClick={handleCopy}
+                    aria-label="Copy URL"
+                    className="text-slate hover:text-offwhite transition"
+                  >
+                    {copied ? (
+                      <Check size={16} className="text-signal" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="flex gap-2">
