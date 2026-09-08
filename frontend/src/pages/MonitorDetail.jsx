@@ -27,6 +27,7 @@ export default function MonitorDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [selectedCheck, setSelectedCheck] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -282,6 +283,7 @@ export default function MonitorDetail() {
                 .map((h) => (
                   <div
                     key={h.id}
+                    onClick={() => setSelectedCheck(h)}
                     className="bg-panel border border-white/5 rounded-lg px-4 py-3 flex items-center justify-between"
                   >
                     <span className="text-slate text-sm font-mono">
@@ -305,6 +307,54 @@ export default function MonitorDetail() {
           </>
         )}
       </div>
+
+      {selectedCheck && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50"
+          onClick={() => setSelectedCheck(null)}
+        >
+          <div
+            className="bg-panel border border-white/10 rounded-xl p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-offwhite font-medium font-mono">
+                Check #{selectedCheck.id}
+              </h3>
+              <button
+                onClick={() => setSelectedCheck(null)}
+                aria-label="Close"
+                className="text-slate hover:text-offwhite text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 font-mono text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate">Status</span>
+                <span
+                  className={selectedCheck.is_up ? "text-signal" : "text-alert"}
+                >
+                  {selectedCheck.is_up ? "UP" : "DOWN"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate">HTTP Status</span>
+                <span className="text-offwhite">
+                  {selectedCheck.status_code ?? "No response"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate">Checked At</span>
+                <span className="text-offwhite">
+                  {new Date(selectedCheck.checked_at).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
