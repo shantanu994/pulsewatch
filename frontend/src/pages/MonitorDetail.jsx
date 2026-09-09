@@ -1,389 +1,152 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { useMonitors } from "../lib/monitors";
 import { useToast } from "../lib/toast";
+import { filterHistoryByHours, latestCheck } from "../lib/utils";
+import MonitorHeader from "../components/monitors/MonitorHeader";
+import MonitorStats from "../components/monitors/MonitorStats";
+import CheckHistory from "../components/monitors/CheckHistory";
+import UptimeChart from "../components/charts/UptimeChart";
+import StatusTimeline from "../components/charts/StatusTimeline";
+import ErrorState from "../components/ui/ErrorState";
+import DeleteMonitorDialog from "../components/monitors/DeleteMonitorDialog";
 import Skeleton from "../components/ui/Skeleton";
-import { Copy, Check } from "lucide-react";
 
 export default function MonitorDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const [monitor, setMonitor] = useState(null);
-  const [uptime, setUptime] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { monitors, extras, loading, refresh, updateMonitor, deleteMonitor } = useMonitors();
   const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
-  const [selectedCheck, setSelectedCheck] = useState(null);
+  const [hours, setHours] = useState(24);
+  const [rangeUptime, setRangeUptime] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const monitor = useMemo(
+    () => monitors.find((m) => String(m.id) === String(id)) || null,
+    [monitors, id]
+  );
+  const extra = extras[monitor?.id] || extras[id] || {};
+  const history = extra.history || [];
+  const lastCheck = extra.lastCheck || latestCheck(history);
 
   useEffect(() => {
-    loadData();
-  }, [id]);
-
-  async function loadData() {
-    setLoading(true);
-    setError("");
-    try {
-      const [monitors, uptimeData, historyData] = await Promise.all([
-        api.getMonitors(),
-        api.getMonitorUptime(id),
-        api.getMonitorHistory(id),
-      ]);
-      const found = monitors.find((m) => String(m.id) === id);
-      setMonitor(found || null);
-      setUptime(uptimeData);
-      setHistory(historyData);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    let ignore = false;
+    async function loadUptime() {
+      try {
+        const data = await api.getMonitorUptime(id, hours);
+        if (!ignore) setRangeUptime(data);
+      } catch {
+        if (!ignore) setRangeUptime(null);
+      }
     }
-  }
+    loadUptime();
+    return () => {
+      ignore = true;
+    };
+  }, [id, hours, extra.history]);
 
-  async function handleTogglePause() {
+  async function handleToggle() {
+    if (!monitor) return;
     setActionLoading(true);
     try {
-      const updated = await api.updateMonitor(id, {
-        is_active: !monitor.is_active,
-      });
-      setMonitor(updated);
-      showToast(updated.is_active ? "Monitor resumed" : "Monitor paused");
+      await updateMonitor(monitor.id, { is_active: !monitor.is_active });
+      showToast(monitor.is_active ? "Monitor paused" : "Monitor resumed");
+      refresh({ silent: true });
     } catch (err) {
-      setError(err.message);
       showToast(err.message, "error");
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleInterval(seconds) {
+    if (!monitor) return;
+    try {
+      await updateMonitor(monitor.id, { interval_seconds: seconds });
+      showToast("Check interval updated");
+    } catch (err) {
+      showToast(err.message, "error");
     }
   }
 
   async function handleDelete() {
     setActionLoading(true);
     try {
-      await api.deleteMonitor(id);
+      await deleteMonitor(id);
       showToast("Monitor deleted");
-      navigate("/dashboard");
+      navigate("/monitors");
     } catch (err) {
-      setError(err.message);
       showToast(err.message, "error");
       setActionLoading(false);
     }
   }
 
-  function handleCopy() {
-    navigator.clipboard.writeText(monitor.url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  if (loading && !monitor) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-4">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-4 gap-3">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <Skeleton className="h-56" />
+      </div>
+    );
   }
 
-  // Turn raw check history into chart-friendly data.
-  // Real data only: 1 = up, 0 = down, taken directly from is_up.
-  const chartData = [...history]
-    .sort((a, b) => new Date(a.checked_at) - new Date(b.checked_at))
-    .map((h) => ({
-      time: new Date(h.checked_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: h.is_up ? 1 : 0,
-      statusCode: h.status_code,
-    }));
+  if (!monitor) {
+    return (
+      <ErrorState
+        title="Monitor not found"
+        body="This monitor does not exist or you do not have access."
+        retryLabel="Back to monitors"
+        onRetry={() => navigate("/monitors")}
+      />
+    );
+  }
 
-  const lastCheck =
-    history.length > 0
-      ? [...history].sort(
-          (a, b) => new Date(b.checked_at) - new Date(a.checked_at),
-        )[0]
-      : null;
-  const isDown = lastCheck ? !lastCheck.is_up : false;
+  const windowed = filterHistoryByHours(history, hours);
 
   return (
-    <div className="min-h-screen bg-ink px-6 py-10">
-      <div className="max-w-3xl mx-auto">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="text-slate text-sm hover:text-offwhite transition mb-6"
-        >
-          ← Back to monitors
-        </button>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <MonitorHeader
+        monitor={monitor}
+        lastCheck={lastCheck}
+        onPause={handleToggle}
+        onResume={handleToggle}
+        onDelete={() => setConfirmDelete(true)}
+        onInterval={handleInterval}
+      />
 
-        {loading && (
-          <div>
-            <Skeleton className="h-4 w-16 mb-2" />
-            <Skeleton className="h-8 w-64 mb-6" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-            <Skeleton className="h-48 w-full mb-6" />
-          </div>
-        )}
-        {error && <p className="text-alert mb-4">{error}</p>}
+      <MonitorStats
+        loading={false}
+        uptime={rangeUptime}
+        monitor={monitor}
+        lastCheck={lastCheck}
+      />
 
-        {!loading && monitor && (
-          <>
-            <div className="flex items-start justify-between mb-1">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      !monitor.is_active
-                        ? "bg-slate"
-                        : isDown
-                          ? "bg-alert"
-                          : "bg-signal"
-                    }`}
-                  />
-                  <span
-                    className={`text-xs font-mono ${
-                      !monitor.is_active
-                        ? "text-slate"
-                        : isDown
-                          ? "text-alert"
-                          : "text-signal"
-                    }`}
-                  >
-                    {!monitor.is_active
-                      ? "PAUSED"
-                      : isDown
-                        ? "DOWN"
-                        : "OPERATIONAL"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-2xl text-offwhite">
-                    {monitor.url}
-                  </h1>
-                  <button
-                    onClick={handleCopy}
-                    aria-label="Copy URL"
-                    className="text-slate hover:text-offwhite transition"
-                  >
-                    {copied ? (
-                      <Check size={16} className="text-signal" />
-                    ) : (
-                      <Copy size={16} />
-                    )}
-                  </button>
-                </div>
-              </div>
+      <UptimeChart
+        history={history}
+        hours={hours}
+        onHoursChange={setHours}
+        uptimePercent={rangeUptime?.uptime_percent}
+      />
 
-              <div className="flex gap-2">
-                <button
-                  onClick={handleTogglePause}
-                  disabled={actionLoading}
-                  className="text-sm px-3 py-1.5 rounded-lg border border-white/10 text-slate hover:text-offwhite hover:border-white/20 transition disabled:opacity-50"
-                >
-                  {monitor.is_active ? "Pause" : "Resume"}
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="text-sm px-3 py-1.5 rounded-lg border border-alert/20 text-alert hover:bg-alert/10 transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+      <StatusTimeline history={windowed} hours={hours} />
+      <CheckHistory history={history} loading={false} />
 
-            <p className="text-slate text-sm font-mono mb-6">
-              Checks every {monitor.interval_seconds}s
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-panel border border-white/5 rounded-xl p-5">
-                <p className="font-mono text-2xl text-signal">
-                  {uptime?.uptime_percent ?? "—"}%
-                </p>
-                <p className="text-slate text-xs mt-1">Uptime (24h)</p>
-              </div>
-              <div className="bg-panel border border-white/5 rounded-xl p-5">
-                <p className="font-mono text-2xl text-offwhite">
-                  {uptime?.total_checks ?? 0}
-                </p>
-                <p className="text-slate text-xs mt-1">Total Checks</p>
-              </div>
-              <div className="bg-panel border border-white/5 rounded-xl p-5">
-                <p className="font-mono text-2xl text-offwhite">
-                  {lastCheck
-                    ? new Date(lastCheck.checked_at).toLocaleTimeString()
-                    : "—"}
-                </p>
-                <p className="text-slate text-xs mt-1">Last Checked</p>
-              </div>
-            </div>
-
-            {chartData.length > 1 ? (
-              <div className="bg-panel border border-white/5 rounded-xl p-5 mb-6">
-                <p className="text-slate text-sm mb-4">Status Over Time</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                    <XAxis dataKey="time" stroke="#8B98A5" fontSize={12} />
-                    <YAxis
-                      domain={[0, 1]}
-                      ticks={[0, 1]}
-                      tickFormatter={(v) => (v === 1 ? "UP" : "DOWN")}
-                      stroke="#8B98A5"
-                      fontSize={12}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#101820",
-                        border: "1px solid #ffffff15",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ color: "#8B98A5" }}
-                      formatter={(value, name, props) => [
-                        `${value === 1 ? "UP" : "DOWN"}${
-                          props.payload.statusCode
-                            ? ` (${props.payload.statusCode})`
-                            : ""
-                        }`,
-                        "Status",
-                      ]}
-                    />
-                    <Area
-                      type="stepAfter"
-                      dataKey="status"
-                      stroke="#3DDC97"
-                      fill="#3DDC9720"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="bg-panel border border-white/5 rounded-xl p-5 mb-6">
-                <p className="text-slate text-sm">
-                  Not enough data yet to chart status over time.
-                </p>
-              </div>
-            )}
-
-            <h2 className="text-offwhite font-medium mb-3">Check History</h2>
-            <div className="space-y-2">
-              {history.length === 0 && (
-                <p className="text-slate text-sm">No checks recorded yet.</p>
-              )}
-              {[...history]
-                .sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at))
-                .map((h) => (
-                  <div
-                    key={h.id}
-                    onClick={() => setSelectedCheck(h)}
-                    className="bg-panel border border-white/5 rounded-lg px-4 py-3 flex items-center justify-between"
-                  >
-                    <span className="text-slate text-sm font-mono">
-                      {new Date(h.checked_at).toLocaleString()}
-                    </span>
-                    <span className="text-slate text-sm font-mono">
-                      {h.status_code ?? "no response"}
-                    </span>
-                    <span
-                      className={`text-xs font-mono px-2 py-1 rounded-full ${
-                        h.is_up
-                          ? "bg-signal/10 text-signal"
-                          : "bg-alert/10 text-alert"
-                      }`}
-                    >
-                      {h.is_up ? "UP" : "DOWN"}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {selectedCheck && (
-        <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50"
-          onClick={() => setSelectedCheck(null)}
-        >
-          <div
-            className="bg-panel border border-white/10 rounded-xl p-6 max-w-sm w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-offwhite font-medium font-mono">
-                Check #{selectedCheck.id}
-              </h3>
-              <button
-                onClick={() => setSelectedCheck(null)}
-                aria-label="Close"
-                className="text-slate hover:text-offwhite text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 font-mono text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate">Status</span>
-                <span
-                  className={selectedCheck.is_up ? "text-signal" : "text-alert"}
-                >
-                  {selectedCheck.is_up ? "UP" : "DOWN"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate">HTTP Status</span>
-                <span className="text-offwhite">
-                  {selectedCheck.status_code ?? "No response"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate">Checked At</span>
-                <span className="text-offwhite">
-                  {new Date(selectedCheck.checked_at).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
-          <div className="bg-panel border border-white/10 rounded-xl p-6 max-w-sm w-full">
-            <h3 className="text-offwhite font-medium mb-2">
-              Delete this monitor?
-            </h3>
-            <p className="text-slate text-sm mb-6">
-              This permanently removes the monitor and its check history. This
-              cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="text-sm px-4 py-2 rounded-lg text-slate hover:text-offwhite transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={actionLoading}
-                className="text-sm px-4 py-2 rounded-lg bg-alert text-ink font-medium hover:opacity-90 transition disabled:opacity-50"
-              >
-                {actionLoading ? "Deleting..." : "Delete Monitor"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteMonitorDialog
+        monitor={monitor}
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        loading={actionLoading}
+      />
     </div>
   );
 }

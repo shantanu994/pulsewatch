@@ -1,77 +1,101 @@
 import { motion } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import StatusBadge from "../ui/StatusBadge";
+import Dropdown from "../ui/Dropdown";
+import {
+  formatInterval,
+  formatUptime,
+  getMonitorStatus,
+  monitorName,
+  sortChecks,
+  timeAgo,
+} from "../../lib/utils";
 
-function timeAgo(dateString) {
-  if (!dateString) return "never";
-  const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+function StatusBar({ history }) {
+  const recent = sortChecks(history).slice(-36);
+  if (recent.length === 0) {
+    return <div className="h-2 rounded-full bg-white/8" />;
+  }
+  return (
+    <div className="flex h-2 rounded-full overflow-hidden gap-px">
+      {recent.map((check) => (
+        <span
+          key={check.id}
+          className={`flex-1 ${check.is_up ? "bg-signal/80" : "bg-alert/80"}`}
+        />
+      ))}
+    </div>
+  );
 }
 
-export default function MonitorCard({ monitor, uptime, lastCheck }) {
+export default function MonitorCard({
+  monitor,
+  uptime,
+  lastCheck,
+  history = [],
+  onPause,
+  onResume,
+  onDelete,
+}) {
   const navigate = useNavigate();
-
-  const isDown = lastCheck ? !lastCheck.is_up : false;
-  const statusLabel = !monitor.is_active
-    ? "PAUSED"
-    : isDown
-    ? "DOWN"
-    : "OPERATIONAL";
-  const statusColor = !monitor.is_active
-    ? "text-slate"
-    : isDown
-    ? "text-alert"
-    : "text-signal";
-  const dotColor = !monitor.is_active
-    ? "bg-slate"
-    : isDown
-    ? "bg-alert"
-    : "bg-signal";
+  const status = getMonitorStatus(monitor, lastCheck);
 
   return (
-    <motion.div
+    <motion.article
+      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       onClick={() => navigate(`/monitors/${monitor.id}`)}
-      className="bg-panel border border-white/5 rounded-xl p-5 cursor-pointer hover:border-signal/30 transition group"
+      onKeyDown={(e) => {
+        if (e.key === "Enter") navigate(`/monitors/${monitor.id}`);
+      }}
+      tabIndex={0}
+      className="group bg-panel border border-white/5 rounded-xl p-5 cursor-pointer hover:-translate-y-0.5 hover:border-signal/30 transition-all outline-none focus-visible:ring-2 focus-visible:ring-signal"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-          <span className={`text-xs font-mono ${statusColor}`}>{statusLabel}</span>
-        </div>
-        <span className="text-slate text-xs opacity-0 group-hover:opacity-100 transition">
-          View →
-        </span>
-      </div>
-
-      <p className="text-offwhite font-medium mb-1 truncate">{monitor.url}</p>
-
-      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
-        <div>
-          <p className="font-mono text-lg text-offwhite">
-            {uptime?.uptime_percent ?? "—"}%
-          </p>
-          <p className="text-slate text-xs">Uptime</p>
-        </div>
-        <div>
-          <p className="font-mono text-lg text-offwhite">{uptime?.total_checks ?? 0}</p>
-          <p className="text-slate text-xs">Checks</p>
-        </div>
-        <div>
-          <p className="font-mono text-lg text-offwhite">{monitor.interval_seconds}s</p>
-          <p className="text-slate text-xs">Interval</p>
+      <div className="flex items-center justify-between mb-4">
+        <StatusBadge status={status} />
+        <div className="flex items-center gap-1">
+          <ArrowUpRight
+            size={16}
+            className="text-slate opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition"
+          />
+          <Dropdown
+            items={[
+              { label: "Open", onClick: () => navigate(`/monitors/${monitor.id}`) },
+              monitor.is_active
+                ? { label: "Pause monitor", onClick: onPause }
+                : { label: "Resume monitor", onClick: onResume },
+              { label: "Delete", danger: true, onClick: onDelete },
+            ]}
+          />
         </div>
       </div>
 
-      <p className="text-slate text-xs mt-3 font-mono">
+      <h3 className="font-display text-lg text-offwhite truncate">{monitorName(monitor.url)}</h3>
+      <p className="text-slate text-sm font-mono truncate mb-4">{monitor.url}</p>
+
+      <StatusBar history={history} />
+
+      <div className="grid grid-cols-3 gap-3 mt-4">
+        <div>
+          <p className="font-mono text-offwhite">{formatUptime(uptime?.uptime_percent)}</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Uptime</p>
+        </div>
+        <div>
+          <p className="font-mono text-offwhite">{uptime?.total_checks ?? history.length}</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Checks</p>
+        </div>
+        <div>
+          <p className="font-mono text-offwhite">{formatInterval(monitor.interval_seconds)}</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Interval</p>
+        </div>
+      </div>
+
+      <p className="text-slate text-xs mt-4 font-mono">
         Last checked {timeAgo(lastCheck?.checked_at)}
       </p>
-    </motion.div>
+    </motion.article>
   );
 }

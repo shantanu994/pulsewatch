@@ -1,5 +1,14 @@
 const API_URL = "http://127.0.0.1:8000";
 
+function parseDetail(payload) {
+  const detail = payload?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item.msg || item.detail || String(item)).join(", ");
+  }
+  return "Request failed";
+}
+
 async function request(path, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -12,14 +21,20 @@ async function request(path, options = {}) {
     },
   });
 
-  if (!res.ok) {
-    const error = await res
-      .json()
-      .catch(() => ({ detail: "Something went wrong" }));
-    throw new Error(error.detail || "Request failed");
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("pw-auth-expired"));
   }
 
-  return res.json();
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: "Something went wrong" }));
+    throw new Error(parseDetail(error) || "Request failed");
+  }
+
+  if (res.status === 204) return null;
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
 }
 
 export const api = {
@@ -33,6 +48,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
+  getMe: () => request("/auth/me"),
   getMonitors: () => request("/monitors"),
   createMonitor: (url, interval_seconds) =>
     request("/monitors", {
@@ -44,8 +60,7 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(updates),
     }),
-  deleteMonitor: (id) =>
-    request(`/monitors/${id}`, { method: "DELETE" }),
+  deleteMonitor: (id) => request(`/monitors/${id}`, { method: "DELETE" }),
   getMonitorUptime: (id, hours = 24) =>
     request(`/monitors/${id}/uptime?hours=${hours}`),
   getMonitorHistory: (id) => request(`/monitors/${id}/results`),

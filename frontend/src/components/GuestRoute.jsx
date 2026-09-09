@@ -1,9 +1,8 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 
-export default function ProtectedRoute({ children }) {
+export default function GuestRoute({ children }) {
   const { user, ready } = useAuth();
-
   if (!ready) {
     return (
       <div className="min-h-screen bg-ink flex items-center justify-center">
@@ -11,10 +10,6 @@ export default function ProtectedRoute({ children }) {
       </div>
     );
   }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
