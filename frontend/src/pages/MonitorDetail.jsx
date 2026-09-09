@@ -123,7 +123,7 @@ export default function MonitorDetail() {
           <div>
             <Skeleton className="h-4 w-16 mb-2" />
             <Skeleton className="h-8 w-64 mb-6" />
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
@@ -202,7 +202,7 @@ export default function MonitorDetail() {
               Checks every {monitor.interval_seconds}s
             </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="bg-panel border border-white/5 rounded-xl p-5">
                 <p className="font-mono text-2xl text-signal">
                   {uptime?.uptime_percent ?? "—"}%

@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../../lib/api";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 function timeAgo(dateString) {
   if (!dateString) return "never";
@@ -14,48 +12,25 @@ function timeAgo(dateString) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-export default function MonitorCard({ monitor }) {
+export default function MonitorCard({ monitor, uptime, lastCheck }) {
   const navigate = useNavigate();
-  const [uptime, setUptime] = useState(null);
-  const [lastCheck, setLastCheck] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStats();
-  }, [monitor.id]);
-
-  async function loadStats() {
-    setLoading(true);
-    try {
-      const [uptimeData, history] = await Promise.all([
-        api.getMonitorUptime(monitor.id),
-        api.getMonitorHistory(monitor.id),
-      ]);
-      setUptime(uptimeData);
-      setLastCheck(history.length > 0 ? history[history.length - 1] : null);
-    } catch {
-      // silently fail per-card; the card just shows "—" for stats
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const isDown = lastCheck ? !lastCheck.is_up : false;
   const statusLabel = !monitor.is_active
     ? "PAUSED"
     : isDown
-      ? "DOWN"
-      : "OPERATIONAL";
+    ? "DOWN"
+    : "OPERATIONAL";
   const statusColor = !monitor.is_active
     ? "text-slate"
     : isDown
-      ? "text-alert"
-      : "text-signal";
+    ? "text-alert"
+    : "text-signal";
   const dotColor = !monitor.is_active
     ? "bg-slate"
     : isDown
-      ? "bg-alert"
-      : "bg-signal";
+    ? "bg-alert"
+    : "bg-signal";
 
   return (
     <motion.div
@@ -68,9 +43,7 @@ export default function MonitorCard({ monitor }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-          <span className={`text-xs font-mono ${statusColor}`}>
-            {statusLabel}
-          </span>
+          <span className={`text-xs font-mono ${statusColor}`}>{statusLabel}</span>
         </div>
         <span className="text-slate text-xs opacity-0 group-hover:opacity-100 transition">
           View →
@@ -82,26 +55,22 @@ export default function MonitorCard({ monitor }) {
       <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
         <div>
           <p className="font-mono text-lg text-offwhite">
-            {loading ? "—" : `${uptime?.uptime_percent ?? "—"}%`}
+            {uptime?.uptime_percent ?? "—"}%
           </p>
           <p className="text-slate text-xs">Uptime</p>
         </div>
         <div>
-          <p className="font-mono text-lg text-offwhite">
-            {loading ? "—" : (uptime?.total_checks ?? 0)}
-          </p>
+          <p className="font-mono text-lg text-offwhite">{uptime?.total_checks ?? 0}</p>
           <p className="text-slate text-xs">Checks</p>
         </div>
         <div>
-          <p className="font-mono text-lg text-offwhite">
-            {monitor.interval_seconds}s
-          </p>
+          <p className="font-mono text-lg text-offwhite">{monitor.interval_seconds}s</p>
           <p className="text-slate text-xs">Interval</p>
         </div>
       </div>
 
       <p className="text-slate text-xs mt-3 font-mono">
-        Last checked {loading ? "—" : timeAgo(lastCheck?.checked_at)}
+        Last checked {timeAgo(lastCheck?.checked_at)}
       </p>
     </motion.div>
   );
