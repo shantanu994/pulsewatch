@@ -4,7 +4,7 @@ import StatusBadge from "../ui/StatusBadge";
 import { formatUptime } from "../../lib/utils";
 import Skeleton from "../ui/Skeleton";
 
-export default function HealthOverview({ operational, down, paused, uptime, loading }) {
+export default function HealthOverview({ operational, down, paused, uptime, total, loading }) {
   const systemStatus = down > 0 ? "down" : paused > 0 && operational === 0 ? "paused" : "operational";
 
   if (loading) {
@@ -24,9 +24,12 @@ export default function HealthOverview({ operational, down, paused, uptime, load
   }
 
   return (
-    <div className="bg-panel border border-white/5 rounded-xl p-6">
+    <div className="bg-panel border border-white/5 rounded-xl p-6 md:p-7">
       <div className="flex items-center justify-between mb-6">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-slate">System health</p>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate">System health</p>
+          <p className="text-sm text-offwhite mt-1">{operational} / {total} monitors healthy</p>
+        </div>
         <StatusBadge status={systemStatus} />
       </div>
       <div className="flex flex-col md:flex-row items-center gap-8">
@@ -37,19 +40,19 @@ export default function HealthOverview({ operational, down, paused, uptime, load
           uptime={formatUptime(uptime)}
         />
         <div className="flex-1 w-full grid grid-cols-3 gap-4">
-          <div>
+          <div className="border-l border-white/10 pl-4">
             <p className="font-mono text-2xl text-signal">
               <AnimatedNumber value={operational} />
             </p>
             <p className="text-slate text-xs mt-1">Operational</p>
           </div>
-          <div>
+          <div className="border-l border-white/10 pl-4">
             <p className="font-mono text-2xl text-alert">
               <AnimatedNumber value={down} />
             </p>
             <p className="text-slate text-xs mt-1">Down</p>
           </div>
-          <div>
+          <div className="border-l border-white/10 pl-4">
             <p className="font-mono text-2xl text-slate">
               <AnimatedNumber value={paused} />
             </p>

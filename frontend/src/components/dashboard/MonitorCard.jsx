@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import StatusBadge from "../ui/StatusBadge";
 import Dropdown from "../ui/Dropdown";
 import {
+  formatDateTime,
   formatInterval,
   formatUptime,
   getMonitorStatus,
@@ -22,7 +23,9 @@ function StatusBar({ history }) {
       {recent.map((check) => (
         <span
           key={check.id}
-          className={`flex-1 ${check.is_up ? "bg-signal/80" : "bg-alert/80"}`}
+          title={`${check.is_up ? "UP" : "DOWN"} | HTTP ${check.status_code ?? "no response"} | ${formatDateTime(check.checked_at)}`}
+          aria-label={`${check.is_up ? "Up" : "Down"} check at ${formatDateTime(check.checked_at)}`}
+          className={`flex-1 min-w-[3px] transition-opacity hover:opacity-70 ${check.is_up ? "bg-signal/80" : "bg-alert/80"}`}
         />
       ))}
     </div>

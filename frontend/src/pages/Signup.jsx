@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Activity } from "lucide-react";
+import { Check, LoaderCircle } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import AuthField from "../components/auth/AuthField";
+import AuthLayout from "../components/auth/AuthLayout";
+
+function readableAuthError(error) {
+  const message = error?.message || "";
+  return message === "Request failed" ? "Unable to create account. Please try again." : message;
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -11,6 +18,13 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordChecks = useMemo(() => [
+    { label: "8+ characters", valid: password.length >= 8 },
+    { label: "One number", valid: /\d/.test(password) },
+  ], [password]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -24,83 +38,75 @@ export default function Signup() {
       await signup(email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      setError(readableAuthError(err));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen app-surface flex items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-panel rounded-xl p-8 border border-white/5"
-      >
-        <div className="flex items-center gap-2 mb-8">
-          <span className="w-7 h-7 rounded-md bg-signal/15 border border-signal/20 flex items-center justify-center">
-            <Activity size={14} className="text-signal" />
-          </span>
-          <span className="font-display tracking-wide text-offwhite">PULSEWATCH</span>
-        </div>
-        <h1 className="font-display text-2xl text-offwhite mb-1">Create account</h1>
-        <p className="text-slate text-sm mb-6">Start watching endpoints in minutes.</p>
-
-        <label htmlFor="signup-email" className="block text-sm text-slate mb-1">
-          Email
-        </label>
-        <input
+    <AuthLayout
+      eyebrow="Start monitoring"
+      title="Create your PulseWatch account"
+      description="Start watching your services in minutes."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthField
+          label="Email"
           id="signup-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
+          placeholder="you@example.com"
           autoComplete="email"
-          className="w-full mb-4 bg-ink border border-white/10 rounded-lg px-3 py-2 text-offwhite outline-none focus:border-signal transition"
         />
-
-        <label htmlFor="signup-password" className="block text-sm text-slate mb-1">
-          Password
-        </label>
-        <input
+        <AuthField
+          label="Password"
           id="signup-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
+          placeholder="Create a password"
           minLength={8}
           autoComplete="new-password"
-          className="w-full mb-4 bg-ink border border-white/10 rounded-lg px-3 py-2 text-offwhite outline-none focus:border-signal transition"
+          showPassword={showPassword}
+          onTogglePassword={() => setShowPassword((visible) => !visible)}
         />
-
-        <label htmlFor="signup-confirm" className="block text-sm text-slate mb-1">
-          Confirm password
-        </label>
-        <input
+        <div className="-mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-slate">
+          {passwordChecks.map((check) => (
+            <span key={check.label} className={check.valid ? "text-signal" : ""}>
+              {check.valid ? <Check size={11} className="mr-1 inline" /> : ""}{check.label}
+            </span>
+          ))}
+        </div>
+        <AuthField
+          label="Confirm password"
           id="signup-confirm"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          className="w-full mb-6 bg-ink border border-white/10 rounded-lg px-3 py-2 text-offwhite outline-none focus:border-signal transition"
+          placeholder="Confirm your password"
+          autoComplete="new-password"
+          showPassword={showConfirmPassword}
+          onTogglePassword={() => setShowConfirmPassword((visible) => !visible)}
         />
 
-        {error ? <p className="text-alert text-sm mb-4">{error}</p> : null}
+        {error ? <p role="alert" className="rounded-lg border border-alert/20 bg-alert/5 px-3 py-2.5 text-sm text-alert">{error}</p> : null}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-signal text-ink font-medium rounded-lg py-2 hover:opacity-90 transition disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-signal"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-signal py-2.5 text-sm font-medium text-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal"
         >
+          {loading ? <LoaderCircle size={16} className="animate-spin" /> : null}
           {loading ? "Creating account..." : "Create account"}
         </button>
 
-        <p className="text-slate text-sm text-center mt-4">
-          Already have an account?{" "}
-          <Link to="/login" className="text-signal hover:underline">
-            Sign in
-          </Link>
-        </p>
+        <div className="flex items-center gap-3 pt-2 text-sm text-slate">
+          <span>Already have an account?</span>
+          <Link to="/login" className="font-medium text-signal transition hover:text-offwhite">Sign in</Link>
+        </div>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
