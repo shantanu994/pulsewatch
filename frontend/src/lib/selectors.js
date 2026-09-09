@@ -1,4 +1,4 @@
-import { getMonitorStatus, monitorName } from "./utils";
+import { getMonitorStatus, monitorName, timestampValue } from "./utils";
 
 export function deriveStatus(monitor, extras) {
   return getMonitorStatus(monitor, extras[monitor.id]?.lastCheck);
@@ -24,8 +24,8 @@ export function filterMonitors(monitors, extras, { query = "", filter = "all", s
       return deriveStatus(a, extras).localeCompare(deriveStatus(b, extras));
     }
     if (sort === "recent") {
-      const ta = ea.lastCheck ? new Date(ea.lastCheck.checked_at).getTime() : 0;
-      const tb = eb.lastCheck ? new Date(eb.lastCheck.checked_at).getTime() : 0;
+      const ta = ea.lastCheck ? timestampValue(ea.lastCheck.checked_at) : 0;
+      const tb = eb.lastCheck ? timestampValue(eb.lastCheck.checked_at) : 0;
       return tb - ta;
     }
     return monitorName(a.url).localeCompare(monitorName(b.url));
@@ -58,7 +58,7 @@ export function summarizeMonitors(monitors, extras) {
       : Math.round((allChecks.filter((c) => c.is_up).length / allChecks.length) * 10000) / 100;
 
   const activity = [...allChecks]
-    .sort((a, b) => new Date(b.checked_at) - new Date(a.checked_at))
+    .sort((a, b) => timestampValue(b.checked_at) - timestampValue(a.checked_at))
     .slice(0, 12);
 
   return {

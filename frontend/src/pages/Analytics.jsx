@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useMonitors } from "../lib/monitors";
 import { summarizeMonitors } from "../lib/selectors";
-import { filterHistoryByHours, formatUptime, monitorName } from "../lib/utils";
+import { filterHistoryByHours, formatChartTime, formatUptime, monitorName, timestampValue } from "../lib/utils";
 import GlobalUptimeChart from "../components/charts/GlobalUptimeChart";
 import HealthChart from "../components/charts/HealthChart";
 import EmptyState from "../components/ui/EmptyState";
@@ -70,11 +70,11 @@ export default function Analytics() {
       const start = since + i * size;
       const end = start + size;
       const slice = windowed.filter((h) => {
-        const t = new Date(h.checked_at).getTime();
+        const t = timestampValue(h.checked_at);
         return t >= start && t < end;
       });
       return {
-        time: new Date(start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: formatChartTime(start, hours),
         failures: slice.filter((s) => !s.is_up).length,
         checks: slice.length,
       };

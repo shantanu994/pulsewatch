@@ -1,3 +1,7 @@
+import { formatLocalDateTime, formatLocalTime, formatRelativeTime, timestampValue } from "./date";
+
+export { formatChartTime, formatLocalDateTime, formatLocalTime, formatRelativeTime, parseTimestamp, timestampValue } from "./date";
+
 export const TIME_RANGES = [
   { key: "1h", label: "1H", hours: 1 },
   { key: "6h", label: "6H", hours: 6 },
@@ -23,15 +27,7 @@ export function monitorName(url) {
 }
 
 export function timeAgo(dateString) {
-  if (!dateString) return "never";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(dateString).getTime()) / 1000));
-  if (seconds < 10) return "just now";
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  return formatRelativeTime(dateString);
 }
 
 export function formatInterval(seconds) {
@@ -43,17 +39,11 @@ export function formatInterval(seconds) {
 }
 
 export function formatTime(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  return formatLocalTime(dateString);
 }
 
 export function formatDateTime(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleString();
+  return formatLocalDateTime(dateString);
 }
 
 export function getMonitorStatus(monitor, lastCheck) {
@@ -64,7 +54,7 @@ export function getMonitorStatus(monitor, lastCheck) {
 
 export function sortChecks(history, newestFirst = false) {
   return [...(history || [])].sort((a, b) => {
-    const diff = new Date(a.checked_at) - new Date(b.checked_at);
+    const diff = timestampValue(a.checked_at) - timestampValue(b.checked_at);
     return newestFirst ? -diff : diff;
   });
 }
@@ -77,7 +67,7 @@ export function latestCheck(history) {
 export function filterHistoryByHours(history, hours) {
   if (!hours) return history || [];
   const since = Date.now() - hours * 3600 * 1000;
-  return (history || []).filter((h) => new Date(h.checked_at).getTime() >= since);
+  return (history || []).filter((h) => timestampValue(h.checked_at) >= since);
 }
 
 export function computeUptime(checks) {

@@ -7,7 +7,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { filterHistoryByHours, formatUptime } from "../../lib/utils";
+import { filterHistoryByHours, formatChartTime, formatLocalDateTime, formatUptime, timestampValue } from "../../lib/utils";
 import TimeRangeControl from "./TimeRangeControl";
 
 function bucketChecks(checks, hours, buckets = 18) {
@@ -17,30 +17,25 @@ function bucketChecks(checks, hours, buckets = 18) {
     const start = since + i * size;
     const end = start + size;
     const slice = checks.filter((h) => {
-      const t = new Date(h.checked_at).getTime();
+      const t = timestampValue(h.checked_at);
       return t >= start && t < end;
     });
     if (!slice.length) return null;
     const up = slice.filter((s) => s.is_up).length;
     return {
-      time: new Date(start).toLocaleString([], {
-        month: hours > 24 ? "short" : undefined,
-        day: hours > 24 ? "numeric" : undefined,
-        hour: "2-digit",
-        minute: hours <= 24 ? "2-digit" : undefined,
-      }),
+      timestamp: start,
       uptime: Math.round((up / slice.length) * 10000) / 100,
       checks: slice.length,
     };
   }).filter(Boolean);
 }
 
-function ChartTooltip({ active, payload, label }) {
+function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
     <div className="bg-ink border border-white/10 rounded-lg px-3 py-2 text-xs">
-      <p className="font-mono text-slate mb-1">{label}</p>
+      <p className="font-mono text-slate mb-1">{formatLocalDateTime(point.timestamp)}</p>
       <p className="text-offwhite">{point.uptime}% uptime</p>
       <p className="text-slate">{point.checks} checks</p>
     </div>
@@ -79,7 +74,7 @@ export default function GlobalUptimeChart({ checks, hours, onHoursChange, title 
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="time" stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} minTickGap={24} />
+              <XAxis dataKey="timestamp" tickFormatter={(value) => formatChartTime(value, hours)} stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} minTickGap={24} />
               <YAxis domain={[0, 100]} stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} width={40} />
               <Tooltip content={<ChartTooltip />} />
               <Area type="monotone" dataKey="uptime" stroke="#3DDC97" strokeWidth={1.6} fill="url(#globalFill)" />

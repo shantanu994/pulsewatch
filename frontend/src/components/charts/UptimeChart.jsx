@@ -7,15 +7,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { filterHistoryByHours, formatUptime, sortChecks } from "../../lib/utils";
+import { filterHistoryByHours, formatChartTime, formatLocalDateTime, formatUptime, sortChecks, timestampValue } from "../../lib/utils";
 import TimeRangeControl from "./TimeRangeControl";
 
-function ChartTooltip({ active, payload, label }) {
+function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
     <div className="bg-ink border border-white/10 rounded-lg px-3 py-2 text-xs">
-      <p className="font-mono text-slate mb-1">{label}</p>
+      <p className="font-mono text-slate mb-1">{formatLocalDateTime(point.checkedAt)}</p>
       <p className={point.status === 1 ? "text-signal" : "text-alert"}>
         {point.status === 1 ? "UP" : "DOWN"}
         {point.statusCode != null ? ` · ${point.statusCode}` : ""}
@@ -27,10 +27,8 @@ function ChartTooltip({ active, payload, label }) {
 export default function UptimeChart({ history, hours, onHoursChange, uptimePercent }) {
   const windowed = sortChecks(filterHistoryByHours(history, hours));
   const data = windowed.map((h) => ({
-    time: new Date(h.checked_at).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    timestamp: timestampValue(h.checked_at),
+    checkedAt: h.checked_at,
     status: h.is_up ? 1 : 0,
     statusCode: h.status_code,
   }));
@@ -61,7 +59,8 @@ export default function UptimeChart({ history, hours, onHoursChange, uptimePerce
               </defs>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis
-                dataKey="time"
+                dataKey="timestamp"
+                tickFormatter={(value) => formatChartTime(value, hours)}
                 stroke="#8B98A5"
                 fontSize={11}
                 tickLine={false}

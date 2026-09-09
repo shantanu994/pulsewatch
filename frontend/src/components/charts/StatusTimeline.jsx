@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { filterHistoryByHours, formatDateTime, sortChecks } from "../../lib/utils";
+import { filterHistoryByHours, formatChartTime, formatDateTime, sortChecks } from "../../lib/utils";
 
 export default function StatusTimeline({ history, hours }) {
   const checks = useMemo(
@@ -9,9 +9,11 @@ export default function StatusTimeline({ history, hours }) {
   const [hover, setHover] = useState(null);
 
   const hoursSpan = hours || 24;
-  const ticks = hoursSpan <= 24
-    ? Array.from({ length: 7 }, (_, i) => Math.round((hoursSpan / 6) * i))
-    : ["start", "", "", "", "", "", "now"];
+  const now = Date.now();
+  const ticks = Array.from(
+    { length: 7 },
+    (_, i) => now - hoursSpan * 3600 * 1000 + (hoursSpan * 3600 * 1000 * i) / 6
+  );
 
   return (
     <div className="bg-panel border border-white/5 rounded-xl p-5">
@@ -21,11 +23,7 @@ export default function StatusTimeline({ history, hours }) {
       ) : (
         <>
           <div className="flex justify-between font-mono text-[10px] text-slate mb-2 px-0.5">
-            {hoursSpan <= 24
-              ? ticks.map((t, i) => (
-                  <span key={i}>{String(t).padStart(2, "0")}</span>
-                ))
-              : ticks.map((t, i) => <span key={i}>{t}</span>)}
+            {ticks.map((t, i) => <span key={i}>{formatChartTime(t, hoursSpan)}</span>)}
           </div>
           <div
             className="relative flex h-8 rounded-md overflow-hidden border border-white/5"
