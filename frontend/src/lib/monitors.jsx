@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { api } from "./api";
 import { latestCheck } from "./utils";
 import { useAuth } from "./auth";
@@ -23,7 +31,7 @@ async function loadExtras(monitors) {
       } catch {
         return { id: m.id, uptime: null, history: [], lastCheck: null };
       }
-    })
+    }),
   );
   return Object.fromEntries(results.map((item) => [item.id, item]));
 }
@@ -80,11 +88,14 @@ export function MonitorsProvider({ children }) {
     return () => clearInterval(id);
   }, [isAuthenticated, refresh]);
 
-  const createMonitor = useCallback(async (url, intervalSeconds) => {
-    const created = await api.createMonitor(url, intervalSeconds);
-    await refresh({ silent: true });
-    return created;
-  }, [refresh]);
+  const createMonitor = useCallback(
+    async (url, intervalSeconds) => {
+      const created = await api.createMonitor(url, intervalSeconds);
+      await refresh({ silent: true });
+      return created;
+    },
+    [refresh],
+  );
 
   const updateMonitor = useCallback(async (id, updates) => {
     const updated = await api.updateMonitor(id, updates);
@@ -115,10 +126,25 @@ export function MonitorsProvider({ children }) {
       updateMonitor,
       deleteMonitor,
     }),
-    [monitors, extras, loading, syncing, error, lastSynced, refresh, createMonitor, updateMonitor, deleteMonitor]
+    [
+      monitors,
+      extras,
+      loading,
+      syncing,
+      error,
+      lastSynced,
+      refresh,
+      createMonitor,
+      updateMonitor,
+      deleteMonitor,
+    ],
   );
 
-  return <MonitorsContext.Provider value={value}>{children}</MonitorsContext.Provider>;
+  return (
+    <MonitorsContext.Provider value={value}>
+      {children}
+    </MonitorsContext.Provider>
+  );
 }
 
 export function useMonitors() {

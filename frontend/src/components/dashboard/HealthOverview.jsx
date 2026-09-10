@@ -4,8 +4,20 @@ import StatusBadge from "../ui/StatusBadge";
 import { formatUptime } from "../../lib/utils";
 import Skeleton from "../ui/Skeleton";
 
-export default function HealthOverview({ operational, down, paused, uptime, total, loading }) {
-  const systemStatus = down > 0 ? "down" : paused > 0 && operational === 0 ? "paused" : "operational";
+export default function HealthOverview({
+  operational,
+  down,
+  paused,
+  uptime,
+  total,
+  loading,
+}) {
+  const systemStatus =
+    down > 0
+      ? "down"
+      : paused > 0 && operational === 0
+        ? "paused"
+        : "operational";
 
   if (loading) {
     return (
@@ -27,8 +39,12 @@ export default function HealthOverview({ operational, down, paused, uptime, tota
     <div className="bg-panel border border-white/5 rounded-xl p-6 md:p-7">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate">System health</p>
-          <p className="text-sm text-offwhite mt-1">{operational} / {total} monitors healthy</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate">
+            System health
+          </p>
+          <p className="text-sm text-offwhite mt-1">
+            {operational} / {total} monitors healthy
+          </p>
         </div>
         <StatusBadge status={systemStatus} />
       </div>

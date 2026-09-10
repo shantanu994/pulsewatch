@@ -66,7 +66,10 @@ export default function MonitorCard({
           />
           <Dropdown
             items={[
-              { label: "Open", onClick: () => navigate(`/monitors/${monitor.id}`) },
+              {
+                label: "Open",
+                onClick: () => navigate(`/monitors/${monitor.id}`),
+              },
               monitor.is_active
                 ? { label: "Pause monitor", onClick: onPause }
                 : { label: "Resume monitor", onClick: onResume },
@@ -76,23 +79,39 @@ export default function MonitorCard({
         </div>
       </div>
 
-      <h3 className="font-display text-lg text-offwhite truncate">{monitorName(monitor.url)}</h3>
-      <p className="text-slate text-sm font-mono truncate mb-4">{monitor.url}</p>
+      <h3 className="font-display text-lg text-offwhite truncate">
+        {monitorName(monitor.url)}
+      </h3>
+      <p className="text-slate text-sm font-mono truncate mb-4">
+        {monitor.url}
+      </p>
 
       <StatusBar history={history} />
 
       <div className="grid grid-cols-3 gap-3 mt-4">
         <div>
-          <p className="font-mono text-offwhite">{formatUptime(uptime?.uptime_percent)}</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Uptime</p>
+          <p className="font-mono text-offwhite">
+            {formatUptime(uptime?.uptime_percent)}
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">
+            Uptime
+          </p>
         </div>
         <div>
-          <p className="font-mono text-offwhite">{uptime?.total_checks ?? history.length}</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Checks</p>
+          <p className="font-mono text-offwhite">
+            {uptime?.total_checks ?? history.length}
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">
+            Checks
+          </p>
         </div>
         <div>
-          <p className="font-mono text-offwhite">{formatInterval(monitor.interval_seconds)}</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">Interval</p>
+          <p className="font-mono text-offwhite">
+            {formatInterval(monitor.interval_seconds)}
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-slate mt-0.5">
+            Interval
+          </p>
         </div>
       </div>
 

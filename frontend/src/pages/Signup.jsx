@@ -7,7 +7,9 @@ import AuthLayout from "../components/auth/AuthLayout";
 
 function readableAuthError(error) {
   const message = error?.message || "";
-  return message === "Request failed" ? "Unable to create account. Please try again." : message;
+  return message === "Request failed"
+    ? "Unable to create account. Please try again."
+    : message;
 }
 
 export default function Signup() {
@@ -21,10 +23,13 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const passwordChecks = useMemo(() => [
-    { label: "8+ characters", valid: password.length >= 8 },
-    { label: "One number", valid: /\d/.test(password) },
-  ], [password]);
+  const passwordChecks = useMemo(
+    () => [
+      { label: "8+ characters", valid: password.length >= 8 },
+      { label: "One number", valid: /\d/.test(password) },
+    ],
+    [password],
+  );
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -74,8 +79,12 @@ export default function Signup() {
         />
         <div className="-mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-slate">
           {passwordChecks.map((check) => (
-            <span key={check.label} className={check.valid ? "text-signal" : ""}>
-              {check.valid ? <Check size={11} className="mr-1 inline" /> : ""}{check.label}
+            <span
+              key={check.label}
+              className={check.valid ? "text-signal" : ""}
+            >
+              {check.valid ? <Check size={11} className="mr-1 inline" /> : ""}
+              {check.label}
             </span>
           ))}
         </div>
@@ -91,7 +100,14 @@ export default function Signup() {
           onTogglePassword={() => setShowConfirmPassword((visible) => !visible)}
         />
 
-        {error ? <p role="alert" className="rounded-lg border border-alert/20 bg-alert/5 px-3 py-2.5 text-sm text-alert">{error}</p> : null}
+        {error ? (
+          <p
+            role="alert"
+            className="rounded-lg border border-alert/20 bg-alert/5 px-3 py-2.5 text-sm text-alert"
+          >
+            {error}
+          </p>
+        ) : null}
 
         <button
           type="submit"
@@ -104,7 +120,12 @@ export default function Signup() {
 
         <div className="flex items-center gap-3 pt-2 text-sm text-slate">
           <span>Already have an account?</span>
-          <Link to="/login" className="font-medium text-signal transition hover:text-offwhite">Sign in</Link>
+          <Link
+            to="/login"
+            className="font-medium text-signal transition hover:text-offwhite"
+          >
+            Sign in
+          </Link>
         </div>
       </form>
     </AuthLayout>

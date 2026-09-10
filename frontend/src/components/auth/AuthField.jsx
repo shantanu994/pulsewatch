@@ -1,12 +1,26 @@
 import { Eye, EyeOff } from "lucide-react";
 
-export default function AuthField({ label, id, type = "text", value, onChange, placeholder, autoComplete, required = true, minLength, showPassword, onTogglePassword }) {
+export default function AuthField({
+  label,
+  id,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required = true,
+  minLength,
+  showPassword,
+  onTogglePassword,
+}) {
   const isPassword = type === "password" || type === "text-password";
   const inputType = isPassword ? (showPassword ? "text" : "password") : type;
 
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-xs font-medium text-slate">{label}</label>
+      <label htmlFor={id} className="mb-2 block text-xs font-medium text-slate">
+        {label}
+      </label>
       <span className="relative block">
         <input
           id={id}

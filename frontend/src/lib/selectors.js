@@ -4,7 +4,11 @@ export function deriveStatus(monitor, extras) {
   return getMonitorStatus(monitor, extras[monitor.id]?.lastCheck);
 }
 
-export function filterMonitors(monitors, extras, { query = "", filter = "all", sort = "name" }) {
+export function filterMonitors(
+  monitors,
+  extras,
+  { query = "", filter = "all", sort = "name" },
+) {
   const q = query.trim().toLowerCase();
   let list = monitors.filter((m) => {
     const hay = `${m.url} ${monitorName(m.url)}`.toLowerCase();
@@ -18,7 +22,9 @@ export function filterMonitors(monitors, extras, { query = "", filter = "all", s
     const ea = extras[a.id] || {};
     const eb = extras[b.id] || {};
     if (sort === "uptime") {
-      return (eb.uptime?.uptime_percent ?? -1) - (ea.uptime?.uptime_percent ?? -1);
+      return (
+        (eb.uptime?.uptime_percent ?? -1) - (ea.uptime?.uptime_percent ?? -1)
+      );
     }
     if (sort === "status") {
       return deriveStatus(a, extras).localeCompare(deriveStatus(b, extras));
@@ -55,7 +61,9 @@ export function summarizeMonitors(monitors, extras) {
   const uptime =
     allChecks.length === 0
       ? null
-      : Math.round((allChecks.filter((c) => c.is_up).length / allChecks.length) * 10000) / 100;
+      : Math.round(
+          (allChecks.filter((c) => c.is_up).length / allChecks.length) * 10000,
+        ) / 100;
 
   const activity = [...allChecks]
     .sort((a, b) => timestampValue(b.checked_at) - timestampValue(a.checked_at))

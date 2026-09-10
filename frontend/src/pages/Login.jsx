@@ -7,7 +7,9 @@ import AuthLayout from "../components/auth/AuthLayout";
 
 function readableAuthError(error) {
   const message = error?.message || "";
-  return message === "Request failed" ? "Unable to sign in. Please check your email and password." : message;
+  return message === "Request failed"
+    ? "Unable to sign in. Please check your email and password."
+    : message;
 }
 
 export default function Login() {
@@ -61,7 +63,14 @@ export default function Login() {
           onTogglePassword={() => setShowPassword((visible) => !visible)}
         />
 
-        {error ? <p role="alert" className="rounded-lg border border-alert/20 bg-alert/5 px-3 py-2.5 text-sm text-alert">{error}</p> : null}
+        {error ? (
+          <p
+            role="alert"
+            className="rounded-lg border border-alert/20 bg-alert/5 px-3 py-2.5 text-sm text-alert"
+          >
+            {error}
+          </p>
+        ) : null}
 
         <button
           type="submit"
@@ -74,7 +83,12 @@ export default function Login() {
 
         <div className="flex items-center gap-3 pt-2 text-sm text-slate">
           <span>Don&apos;t have an account?</span>
-          <Link to="/signup" className="font-medium text-signal transition hover:text-offwhite">Create account</Link>
+          <Link
+            to="/signup"
+            className="font-medium text-signal transition hover:text-offwhite"
+          >
+            Create account
+          </Link>
         </div>
       </form>
     </AuthLayout>

@@ -5,9 +5,10 @@ export function parseTimestamp(value) {
   if (value instanceof Date) return value;
   if (typeof value === "number") return new Date(value);
   if (typeof value !== "string" || !value) return new Date(NaN);
-  const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(value) && !HAS_TIMEZONE.test(value)
-    ? `${value}Z`
-    : value;
+  const timestamp =
+    /^\d{4}-\d{2}-\d{2}T/.test(value) && !HAS_TIMEZONE.test(value)
+      ? `${value}Z`
+      : value;
   return new Date(timestamp);
 }
 

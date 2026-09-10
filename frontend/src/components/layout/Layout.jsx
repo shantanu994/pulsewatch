@@ -11,7 +11,8 @@ import { useMonitors } from "../../lib/monitors";
 
 export default function Layout() {
   const location = useLocation();
-  const { setPaletteOpen, setAddMonitorOpen, setSidebarOpen, focusSearch } = useUi();
+  const { setPaletteOpen, setAddMonitorOpen, setSidebarOpen, focusSearch } =
+    useUi();
   const { refresh } = useMonitors();
 
   useEffect(() => {

@@ -10,7 +10,13 @@ import {
 } from "recharts";
 import { useMonitors } from "../lib/monitors";
 import { summarizeMonitors } from "../lib/selectors";
-import { filterHistoryByHours, formatChartTime, formatUptime, monitorName, timestampValue } from "../lib/utils";
+import {
+  filterHistoryByHours,
+  formatChartTime,
+  formatUptime,
+  monitorName,
+  timestampValue,
+} from "../lib/utils";
 import GlobalUptimeChart from "../components/charts/GlobalUptimeChart";
 import HealthChart from "../components/charts/HealthChart";
 import EmptyState from "../components/ui/EmptyState";
@@ -40,10 +46,13 @@ export default function Analytics() {
   const { monitors, extras, loading, error, refresh } = useMonitors();
   const [hours, setHours] = useState(24);
   const [now] = useState(() => Date.now());
-  const summary = useMemo(() => summarizeMonitors(monitors, extras), [monitors, extras]);
+  const summary = useMemo(
+    () => summarizeMonitors(monitors, extras),
+    [monitors, extras],
+  );
   const windowed = useMemo(
     () => filterHistoryByHours(summary.allChecks, hours),
-    [summary.allChecks, hours]
+    [summary.allChecks, hours],
   );
 
   const comparison = useMemo(
@@ -53,7 +62,7 @@ export default function Analytics() {
         uptime: extras[m.id]?.uptime?.uptime_percent ?? 0,
         checks: extras[m.id]?.uptime?.total_checks ?? 0,
       })),
-    [monitors, extras]
+    [monitors, extras],
   );
 
   const distribution = [
@@ -116,7 +125,10 @@ export default function Analytics() {
               <div className="flex flex-wrap gap-4 text-xs text-slate mt-4">
                 {distribution.map((d) => (
                   <span key={d.key} className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: COLORS[d.key] }} />
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: COLORS[d.key] }}
+                    />
                     {d.name} {d.value}
                   </span>
                 ))}
@@ -145,45 +157,121 @@ export default function Analytics() {
             <p className="text-[11px] uppercase tracking-[0.18em] text-slate mb-4">
               Monitor health comparison
             </p>
-            <p className="text-xs text-slate mb-4">24h uptime reported by the API for each monitor.</p>
+            <p className="text-xs text-slate mb-4">
+              24h uptime reported by the API for each monitor.
+            </p>
             <div className="h-64">
               <ResponsiveContainer>
-                <BarChart data={comparison} margin={{ top: 8, right: 8, left: -12, bottom: 24 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="name" stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={48} />
-                  <YAxis domain={[0, 100]} stroke="#8B98A5" fontSize={11} tickFormatter={(v) => `${v}%`} tickLine={false} axisLine={false} />
+                <BarChart
+                  data={comparison}
+                  margin={{ top: 8, right: 8, left: -12, bottom: 24 }}
+                >
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.05)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                    height={48}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickFormatter={(v) => `${v}%`}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip content={<ChartTip />} />
-                  <Bar dataKey="uptime" name="Uptime %" fill="#3DDC97" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="uptime"
+                    name="Uptime %"
+                    fill="#3DDC97"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-panel border border-white/5 rounded-xl p-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate mb-4">Failures over time</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate mb-4">
+              Failures over time
+            </p>
             <div className="h-56">
               <ResponsiveContainer>
                 <BarChart data={failures}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="time" stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} minTickGap={22} />
-                  <YAxis allowDecimals={false} stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.05)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="time"
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={22}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip content={<ChartTip />} />
-                  <Bar dataKey="failures" name="Failed checks" fill="#FF5C5C" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="failures"
+                    name="Failed checks"
+                    fill="#FF5C5C"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-panel border border-white/5 rounded-xl p-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate mb-4">Check activity</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate mb-4">
+              Check activity
+            </p>
             <div className="h-56">
               <ResponsiveContainer>
                 <BarChart data={failures}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="time" stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} minTickGap={22} />
-                  <YAxis allowDecimals={false} stroke="#8B98A5" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.05)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="time"
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={22}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    stroke="#8B98A5"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip content={<ChartTip />} />
-                  <Bar dataKey="checks" name="Checks" fill="#8B98A5" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="checks"
+                    name="Checks"
+                    fill="#8B98A5"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
