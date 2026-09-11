@@ -146,6 +146,16 @@ npm run build
 
 The frontend development server expects the API at `http://127.0.0.1:8000` and is available at `http://localhost:5173`.
 
+### Verification checklist
+
+After starting the services, verify the local setup in this order:
+
+1. Open `http://127.0.0.1:8000/` and confirm the API returns `PulseWatch is alive`.
+2. Open `http://localhost:5173` and create or sign in to an account.
+3. Add a monitor and confirm that its first check appears in the monitor history.
+4. Confirm the Celery worker logs the check and Celery Beat continues scheduling checks.
+5. Run both backend tests and frontend checks before pushing changes.
+
 ## Project Structure
 
 ```
@@ -183,6 +193,8 @@ The frontend development server expects the API at `http://127.0.0.1:8000` and i
 - **Database migration issues**: Check PostgreSQL is accessible, verify `DATABASE_URL`, and run `alembic upgrade head`
 - **Celery tasks not running**: Verify both worker and beat are active; check logs for errors
 - **Email not sending**: Confirm all SMTP settings in `.env`, including `MAIL_SERVER` and `MAIL_PORT`, and verify `MAIL_FROM` is valid
+- **Frontend cannot reach the API**: Confirm FastAPI is running on `http://127.0.0.1:8000` and that the browser is not blocking the request because of a missing CORS configuration
+- **No check history appears**: Confirm the monitor is active, the Celery worker is connected to Redis, and the target URL is reachable from the worker environment
 
 ## License
 
