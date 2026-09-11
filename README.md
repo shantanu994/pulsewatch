@@ -21,6 +21,24 @@ PulseWatch is a distributed uptime-monitoring platform. Register a URL, inspect 
 - Email: fastapi-mail (SMTP)
 - Infra: Docker Compose
 
+## Quick Start
+
+Start the infrastructure, backend, workers, and frontend in separate terminals:
+
+```bash
+docker compose up -d
+alembic upgrade head
+uvicorn main:app --reload
+celery -A app.celery_app worker --loglevel=info --pool=solo
+celery -A app.celery_app beat --loglevel=info
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` after the services are running. The API is available at
+`http://127.0.0.1:8000`.
+
 ## Architecture
 
 PulseWatch uses a FastAPI backend for authentication and monitor management, PostgreSQL for persistent state, and Redis with Celery for scheduled health checks. Celery Beat dispatches active monitors every 60 seconds; a Celery worker checks each URL, records the result, and sends an email when a monitor changes from up to down.
