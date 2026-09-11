@@ -5,7 +5,7 @@ import { formatDateTime, formatTime, sortChecks } from "../../lib/utils";
 
 export default function CheckHistory({ history, loading }) {
   const [selected, setSelected] = useState(null);
-  const rows = sortChecks(history, true);
+  const rows = sortChecks(history, true).slice(0, 10);
 
   if (loading) {
     return (
