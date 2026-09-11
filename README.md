@@ -104,6 +104,15 @@ Beat runs the scheduler every 60 seconds and queues checks for active monitors. 
 
 The frontend is a React/Vite application. Sign up or log in, add a URL, then open a monitor to review uptime and recent check results. Monitors can be paused, resumed, updated, or deleted from the dashboard.
 
+### Frontend capabilities
+
+- Protected routes for the dashboard, monitors, monitor details, analytics, and settings
+- Responsive monitoring cards, status badges, charts, timelines, and check history
+- Search, status filtering, sorting, command palette, keyboard shortcuts, and toast feedback
+- Loading skeletons, empty states, retryable errors, and confirmation dialogs for destructive actions
+- Automatic polling every 45 seconds for monitor and check data; the frontend does not use WebSockets
+- API timestamps displayed in the browser's local timezone while preserving the original instant
+
 ## API Endpoints
 
 - `POST /auth/signup` — create account
