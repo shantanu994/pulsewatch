@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://YOUR-VERCEL-URL.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,9 +33,11 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
+
 @app.get("/")
 def read_root():
     return {"message": "PulseWatch is alive"}
+
 
 @app.post("/auth/signup", response_model=UserOut)
 async def signup(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -56,6 +58,7 @@ async def signup(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
     return new_user
 
+
 @app.post("/auth/login")
 async def login(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user_in.email))
@@ -66,6 +69,7 @@ async def login(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
     token = create_access_token(data={"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
+
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -84,9 +88,11 @@ async def get_current_user(
 
     return user
 
+
 @app.get("/auth/me", response_model=UserOut)
 async def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
 
 @app.post("/monitors", response_model=MonitorOut)
 async def create_monitor(
@@ -113,6 +119,7 @@ async def list_monitors(
     result = await db.execute(select(Monitor).where(Monitor.user_id == current_user.id))
     return result.scalars().all()
 
+
 @app.get("/monitors/{monitor_id}/results", response_model=list[CheckResultOut])
 async def get_monitor_results(
     monitor_id: int,
@@ -120,7 +127,9 @@ async def get_monitor_results(
     db: AsyncSession = Depends(get_db),
 ):
     monitor_check = await db.execute(
-        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+        select(Monitor).where(
+            Monitor.id == monitor_id, Monitor.user_id == current_user.id
+        )
     )
     monitor = monitor_check.scalar_one_or_none()
     if not monitor:
@@ -133,8 +142,10 @@ async def get_monitor_results(
     )
     return result.scalars().all()
 
+
 from datetime import datetime, timedelta
 from app.models import CheckResult
+
 
 @app.get("/monitors/{monitor_id}/uptime")
 async def get_uptime(
@@ -144,7 +155,9 @@ async def get_uptime(
     db: AsyncSession = Depends(get_db),
 ):
     monitor_result = await db.execute(
-        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+        select(Monitor).where(
+            Monitor.id == monitor_id, Monitor.user_id == current_user.id
+        )
     )
     monitor = monitor_result.scalar_one_or_none()
     if not monitor:
@@ -152,7 +165,9 @@ async def get_uptime(
 
     since = datetime.utcnow() - timedelta(hours=hours)
     results = await db.execute(
-        select(CheckResult).where(CheckResult.monitor_id == monitor_id, CheckResult.checked_at >= since)
+        select(CheckResult).where(
+            CheckResult.monitor_id == monitor_id, CheckResult.checked_at >= since
+        )
     )
     checks = results.scalars().all()
 
@@ -162,7 +177,12 @@ async def get_uptime(
     up_count = sum(1 for c in checks if c.is_up)
     uptime_percent = round((up_count / len(checks)) * 100, 2)
 
-    return {"monitor_id": monitor_id, "uptime_percent": uptime_percent, "total_checks": len(checks)}
+    return {
+        "monitor_id": monitor_id,
+        "uptime_percent": uptime_percent,
+        "total_checks": len(checks),
+    }
+
 
 @app.patch("/monitors/{monitor_id}", response_model=MonitorOut)
 async def update_monitor(
@@ -172,7 +192,9 @@ async def update_monitor(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+        select(Monitor).where(
+            Monitor.id == monitor_id, Monitor.user_id == current_user.id
+        )
     )
     monitor = result.scalar_one_or_none()
     if not monitor:
@@ -195,7 +217,9 @@ async def delete_monitor(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Monitor).where(Monitor.id == monitor_id, Monitor.user_id == current_user.id)
+        select(Monitor).where(
+            Monitor.id == monitor_id, Monitor.user_id == current_user.id
+        )
     )
     monitor = result.scalar_one_or_none()
     if not monitor:
@@ -205,7 +229,9 @@ async def delete_monitor(
     await db.commit()
     return {"detail": "Monitor deleted"}
 
+
 from app.tasks import run_all_checks
+
 
 @app.post("/internal/trigger-checks")
 async def trigger_checks():
