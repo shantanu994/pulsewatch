@@ -204,3 +204,12 @@ async def delete_monitor(
     await db.delete(monitor)
     await db.commit()
     return {"detail": "Monitor deleted"}
+
+from app.tasks import run_all_checks
+
+@app.post("/internal/trigger-checks")
+async def trigger_checks():
+    # Note: this bypasses Celery entirely for simplified free-tier deployment.
+    # Calls the same logic, just synchronously, triggered by an external cron service.
+    result = run_all_checks()
+    return {"detail": result}
