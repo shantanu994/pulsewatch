@@ -94,9 +94,10 @@ In separate terminals, run:
 ### Frontend Setup
 
 1. Navigate to frontend: `cd frontend`
-2. Install dependencies: `npm install`
-3. Start dev server: `npm run dev`
-4. Access the dashboard at `http://localhost:5173`
+2. Copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_URL` to the backend URL.
+3. Install dependencies: `npm install`
+4. Start dev server: `npm run dev`
+5. Access the dashboard at `http://localhost:5173`
 
 Beat runs the scheduler every 60 seconds and queues checks for active monitors. New monitors default to a 300-second interval in the data model; the current scheduler dispatches every active monitor on each run.
 
@@ -108,9 +109,12 @@ The frontend is a React/Vite application. Sign up or log in, add a URL, then ope
 
 - Protected routes for the dashboard, monitors, monitor details, analytics, and settings
 - Responsive monitoring cards, status badges, charts, timelines, and check history
+- Analytics view with global uptime, health, and status timeline visualizations
 - Search, status filtering, sorting, command palette, keyboard shortcuts, and toast feedback
 - Loading skeletons, empty states, retryable errors, and confirmation dialogs for destructive actions
+- Monitor detail pages display the 10 newest check results and open individual checks for more detail
 - Automatic polling every 45 seconds for monitor and check data; the frontend does not use WebSockets
+- Configurable API base URL through `VITE_API_URL` for local and deployed frontend environments
 - API timestamps displayed in the browser's local timezone while preserving the original instant
 
 ## API Endpoints
@@ -144,7 +148,7 @@ npm run lint
 npm run build
 ```
 
-The frontend development server expects the API at `http://127.0.0.1:8000` and is available at `http://localhost:5173`.
+The frontend development server is available at `http://localhost:5173`. Set `VITE_API_URL=http://127.0.0.1:8000` for local development, or set it to the deployed API URL before building the frontend.
 
 ### Verification checklist
 
