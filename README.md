@@ -185,11 +185,7 @@ After starting the services, verify the local setup in this order:
 
 ## How It Works
 
-1. **User Registration & Login** — JWT tokens issued on successful authentication
-2. **Monitor Creation** — User registers a URL to monitor
-3. **Scheduled Checks** — Celery Beat triggers the check dispatcher every minute
-4. **Health Check Task** — A Celery worker sends an HTTP request and records the result
-5. **Alert on State Change** — Email is sent only when a monitor changes from up to down
+Users create an account, sign in, and add a URL to monitor. Celery Beat periodically queues checks, and a Celery worker requests each URL and stores the result. The dashboard shows monitor health, uptime, and history, while email alerts are sent when a monitor changes from healthy to down.
 
 ## Troubleshooting
 
