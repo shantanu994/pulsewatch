@@ -52,18 +52,44 @@ def run_all_checks():
 
     return f"Queued {len(monitors)} checks"
 
+from datetime import datetime, timedelta
+
 def run_all_checks_sync():
     """
     Same purpose as run_all_checks, but calls check_url directly
     instead of through Celery's .delay() — used for the simplified,
     Celery-free production deployment where no worker/Redis is running.
+
+    Only checks monitors whose interval has actually elapsed since
+    their last check, rather than checking every active monitor
+    on every call.
     """
     with SyncSessionLocal() as db:
         monitors = db.query(Monitor).filter(Monitor.is_active == True).all()
 
+        due_monitors = []
+        now = datetime.utcnow()
+
+        for m in monitors:
+            last_result = (
+                db.query(CheckResult)
+                .filter(CheckResult.monitor_id == m.id)
+                .order_by(CheckResult.checked_at.desc())
+                .first()
+            )
+
+            if last_result is None:
+                # never checked before — it's due
+                due_monitors.append(m)
+                continue
+
+            elapsed = (now - last_result.checked_at).total_seconds()
+            if elapsed >= m.interval_seconds:
+                due_monitors.append(m)
+
     results = []
-    for m in monitors:
+    for m in due_monitors:
         result = check_url(m.id, m.url)
         results.append(result)
 
-    return f"Checked {len(results)} monitors directly"
+    return f"Checked {len(results)} of {len(monitors)} monitors (others not yet due)"
