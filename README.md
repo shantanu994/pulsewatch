@@ -2,6 +2,10 @@
 
 PulseWatch is a distributed uptime-monitoring platform. Register a URL, inspect recent check history and uptime, and receive email alerts when a monitored URL transitions from healthy to down.
 
+## Deployed App
+
+[Open the PulseWatch login page](https://pulsewatch-mu.vercel.app/login)
+
 ## Features
 
 - JWT-based authentication (signup/login)
