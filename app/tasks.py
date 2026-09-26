@@ -51,3 +51,19 @@ def run_all_checks():
         check_url.delay(m.id, m.url)
 
     return f"Queued {len(monitors)} checks"
+
+def run_all_checks_sync():
+    """
+    Same purpose as run_all_checks, but calls check_url directly
+    instead of through Celery's .delay() — used for the simplified,
+    Celery-free production deployment where no worker/Redis is running.
+    """
+    with SyncSessionLocal() as db:
+        monitors = db.query(Monitor).filter(Monitor.is_active == True).all()
+
+    results = []
+    for m in monitors:
+        result = check_url(m.id, m.url)
+        results.append(result)
+
+    return f"Checked {len(results)} monitors directly"

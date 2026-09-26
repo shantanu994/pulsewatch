@@ -6,6 +6,8 @@ PulseWatch is a distributed uptime-monitoring platform. Register a URL, inspect 
 
 [Open the PulseWatch login page](https://pulsewatch-mu.vercel.app/login)
 
+The deployed frontend uses the backend URL configured through the `VITE_API_URL` build-time environment variable.
+
 ## Features
 
 - JWT-based authentication (signup/login)
@@ -45,7 +47,7 @@ Open `http://localhost:5173` after the services are running. The API is availabl
 
 ## Architecture
 
-PulseWatch uses a FastAPI backend for authentication and monitor management, PostgreSQL for persistent state, and Redis with Celery for scheduled health checks. Celery Beat dispatches active monitors every 60 seconds; a Celery worker checks each URL, records the result, and sends an email when a monitor changes from up to down.
+PulseWatch uses a FastAPI backend for authentication and monitor management, PostgreSQL for persistent state, and Redis with Celery for scheduled health checks. In the local Docker workflow, Celery Beat dispatches active monitors every 60 seconds; a Celery worker checks each URL, records the result, and sends an email when a monitor changes from up to down. The deployed free-tier setup can trigger the same check logic through an external scheduler calling `POST /internal/trigger-checks`.
 
 ## Prerequisites
 
@@ -133,6 +135,7 @@ The frontend is a React/Vite application. Sign up or log in, add a URL, then ope
 - `GET /monitors/{id}/uptime?hours=24` — uptime percentage for a time window (protected)
 - `PATCH /monitors/{id}` — update active state or interval (protected)
 - `DELETE /monitors/{id}` — delete a monitor (protected)
+- `POST /internal/trigger-checks` — run checks for active monitors from an external scheduler
 
 ## Testing
 
