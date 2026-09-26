@@ -1,208 +1,148 @@
 # PulseWatch
 
-PulseWatch is a distributed uptime-monitoring platform. Register a URL, inspect recent check history and uptime, and receive email alerts when a monitored URL transitions from healthy to down.
+**Live demo:** https://pulsewatch-mu.vercel.app
+**API:** https://pulsewatch-e0gj.onrender.com
 
-## Deployed App
+A distributed uptime-monitoring platform: register a URL, get automatic health checks on a schedule, track uptime percentage and check history, and receive an email when something goes down.
 
-[Open the PulseWatch login page](https://pulsewatch-mu.vercel.app/login)
+Built from scratch as a learning project to explore backend and distributed-systems concepts including authentication, background job processing, scheduling, and data isolation.
 
-The deployed frontend uses the backend URL configured through the `VITE_API_URL` build-time environment variable.
+> Note: the free-tier deployment sleeps after periods of inactivity on Render. The first request after idle time may take 30-50 seconds to respond.
+
+---
 
 ## Features
 
-- JWT-based authentication (signup/login)
-- Create and manage monitors (URLs to watch)
-- Automatic scheduled health checks via Celery Beat
-- Uptime percentage calculation
-- Email alerts on downtime (with spam prevention - only alerts on state change)
-- Monitor history, pause/resume, and deletion from the web dashboard
-- Responsive React dashboard with authentication, monitor cards, status history, and uptime charts
+- JWT-based authentication with signup, login, and protected routes
+- Create, list, pause/resume, and delete monitors with per-user isolation
+- Automatic scheduled health checks respecting each monitor's individual interval
+- Uptime percentage and check-history tracking
+- Email alerts on downtime with transition-based detection, so repeated failures do not send repeated alerts
+- Responsive React dashboard with live status, search, filtering, and monitor detail views
 
 ## Tech Stack
 
-- Backend: FastAPI (async), SQLAlchemy, Alembic
-- Database: PostgreSQL
-- Background jobs: Celery + Redis
-- Auth: JWT (python-jose), bcrypt password hashing
-- Email: fastapi-mail (SMTP)
-- Infra: Docker Compose
+**Backend:** FastAPI (async), SQLAlchemy, Alembic, PostgreSQL, JWT (python-jose), bcrypt, httpx, fastapi-mail
+**Background jobs (local development):** Celery, Celery Beat, Redis
+**Frontend:** React, Vite, Tailwind CSS, React Router, Recharts, Framer Motion
+**Infrastructure:** Docker Compose (local), Render (API), Neon (Postgres), Vercel (frontend)
 
-## Quick Start
+## Architecture
 
-Start the infrastructure, backend, workers, and frontend in separate terminals:
+```text
+                    +--------------+
+                    |   Frontend   |  React dashboard + auth
+                    +------+-------+
+                           | REST (JWT auth)
+                    +------v-------+
+                    |  API Server  |  FastAPI: auth, monitors, uptime
+                    +------+-------+
+                           |
+                    +------v-------+
+                    |  PostgreSQL  |  users, monitors, check_results
+                    +--------------+
+
+Local development also runs:
+  Celery worker + Celery Beat + Redis
+  -> scheduled background checks, decoupled from the API process
+```
+
+### Production deployment
+
+Locally, scheduled checks run through Celery, Redis, and Celery Beat: a real message queue and scheduler decoupled from the API process. Most free hosting tiers support web services more readily than always-on background workers.
+
+To keep the live demo functional without a paid worker, the production deployment uses an external free scheduler ([cron-job.org](https://cron-job.org/)) that calls `POST /internal/trigger-checks` every minute. The endpoint runs the same check logic synchronously and checks only monitors whose individual interval has elapsed since their last check. The Celery/Redis architecture remains available for local development.
+
+## Local Development Setup
 
 ```bash
-docker compose up -d
+# clone and enter the repo
+git clone https://github.com/shantanu994/pulsewatch.git
+cd pulsewatch
+
+# backend setup
+cp .env.example .env          # fill in your own values
+python -m venv venv
+venv\\Scripts\\activate       # or source venv/bin/activate on Mac/Linux
+pip install -r requirements.txt
+docker compose up -d          # starts Postgres + Redis
 alembic upgrade head
 uvicorn main:app --reload
+
+# in separate terminals:
 celery -A app.celery_app worker --loglevel=info --pool=solo
 celery -A app.celery_app beat --loglevel=info
+
+# frontend setup, in a separate terminal
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` after the services are running. The API is available at
-`http://127.0.0.1:8000`.
+The frontend is available at `http://localhost:5173`. The local API is available at `http://127.0.0.1:8000`.
 
-## Architecture
+### Environment variables
 
-PulseWatch uses a FastAPI backend for authentication and monitor management, PostgreSQL for persistent state, and Redis with Celery for scheduled health checks. In the local Docker workflow, Celery Beat dispatches active monitors every 60 seconds; a Celery worker checks each URL, records the result, and sends an email when a monitor changes from up to down. The deployed free-tier setup can trigger the same check logic through an external scheduler calling `POST /internal/trigger-checks`.
+Backend variables are defined in `.env.example`:
 
-## Prerequisites
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection URL
+- `SECRET_KEY` - long, random JWT signing key
+- `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_SERVER`, and `MAIL_PORT` - optional SMTP settings for email alerts
 
-- Python 3.10+
-- Node.js 18+ (for frontend)
-- PostgreSQL 16 (provided by Docker Compose)
-- Redis 7 (provided by Docker Compose)
-- Docker & Docker Compose
+Frontend variables are defined in `frontend/.env.example`:
 
-## Environment Setup
+- `VITE_API_URL` - backend API base URL, such as `http://127.0.0.1:8000`
 
-1. Clone the repository.
-2. Copy `.env.example` to `.env`.
-3. Set the required database and JWT settings, then add SMTP settings if email alerts are needed:
-   - `DATABASE_URL` - PostgreSQL connection string
-   - `REDIS_URL` - Redis connection URL (defaults to `redis://localhost:6379/0`)
-   - `SECRET_KEY` - long, random JWT signing key
-   - `MAIL_USERNAME` and `MAIL_PASSWORD` - SMTP credentials
-   - `MAIL_FROM` - sender email address
-   - `MAIL_SERVER` - SMTP server hostname
-   - `MAIL_PORT` - SMTP server port
-
-The included Docker Compose services use these local development values. Add `REDIS_URL` to `.env` when using the local Redis container:
-
-```env
-DATABASE_URL=postgresql+asyncpg://pulsewatch:pulsewatch123@localhost:5432/pulsewatch
-REDIS_URL=redis://localhost:6379/0
-```
-
-Use a long, random value for `SECRET_KEY`. Do not commit `.env` or real SMTP credentials. The application expects `DATABASE_URL` to be set before starting the backend.
-
-## Running Locally
-
-### Backend Setup
-
-1. Create virtual environment: `python -m venv venv`
-2. Activate it on macOS/Linux with `source venv/bin/activate`, or on Windows with `venv\Scripts\activate`
-3. Install dependencies: `pip install -r requirements.txt`
-4. Start PostgreSQL and Redis: `docker compose up -d`
-5. Initialize database: `alembic upgrade head`
-
-### Running Backend Services
-
-In separate terminals, run:
-
-1. **FastAPI server**: `uvicorn main:app --reload` (API at `http://127.0.0.1:8000`)
-2. **Celery worker**: `celery -A app.celery_app worker --loglevel=info --pool=solo`
-3. **Celery Beat** (scheduler): `celery -A app.celery_app beat --loglevel=info`
-
-### Frontend Setup
-
-1. Navigate to frontend: `cd frontend`
-2. Copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_URL` to the backend URL.
-3. Install dependencies: `npm install`
-4. Start dev server: `npm run dev`
-5. Access the dashboard at `http://localhost:5173`
-
-Beat runs the scheduler every 60 seconds and queues checks for active monitors. New monitors default to a 300-second interval in the data model; the current scheduler dispatches every active monitor on each run.
-
-### Dashboard workflow
-
-The frontend is a React/Vite application. Sign up or log in, add a URL, then open a monitor to review uptime and recent check results. Monitors can be paused, resumed, updated, or deleted from the dashboard.
-
-### Frontend capabilities
-
-- Protected routes for the dashboard, monitors, monitor details, analytics, and settings
-- Responsive monitoring cards, status badges, charts, timelines, and check history
-- Analytics view with global uptime, health, and status timeline visualizations
-- Search, status filtering, sorting, command palette, keyboard shortcuts, and toast feedback
-- Loading skeletons, empty states, retryable errors, and confirmation dialogs for destructive actions
-- Monitor detail pages display the 10 newest check results and open individual checks for more detail
-- Automatic polling every 45 seconds for monitor and check data; the frontend does not use WebSockets
-- Configurable API base URL through `VITE_API_URL` for local and deployed frontend environments
-- API timestamps displayed in the browser's local timezone while preserving the original instant
+Do not commit `.env` files or real credentials.
 
 ## API Endpoints
 
-- `POST /auth/signup` — create account
-- `POST /auth/login` — get access token
-- `GET /auth/me` — current user info (protected)
-- `GET /` — service health message
-- `POST /monitors` — create a monitor (protected)
-- `GET /monitors` — list your monitors (protected)
-- `GET /monitors/{id}/results` — recent check history (protected)
-- `GET /monitors/{id}/uptime?hours=24` — uptime percentage for a time window (protected)
-- `PATCH /monitors/{id}` — update active state or interval (protected)
-- `DELETE /monitors/{id}` — delete a monitor (protected)
-- `POST /internal/trigger-checks` — run checks for active monitors from an external scheduler
+```text
+GET    /                         - service health
+POST   /auth/signup              - create account
+POST   /auth/login               - returns a JWT access token
+GET    /auth/me                  - current user (protected)
+
+POST   /monitors                 - create a monitor (protected)
+GET    /monitors                 - list your monitors (protected)
+PATCH  /monitors/{id}            - pause/resume or update interval (protected)
+DELETE /monitors/{id}            - delete a monitor and its history (protected)
+GET    /monitors/{id}/uptime     - uptime percentage over a time window (protected)
+GET    /monitors/{id}/results    - check history (protected)
+
+POST   /internal/trigger-checks  - run due checks for the external scheduler
+```
 
 ## Testing
 
-Run the backend task tests:
+The repository currently contains task smoke scripts rather than a comprehensive automated test suite:
 
 ```bash
 pytest test_task.py test_downtime.py -v
 ```
 
-- **test_task.py** — Tests for Celery task execution and health check logic
-- **test_downtime.py** — Tests for downtime detection and alert triggering
-
-Run the frontend checks from the `frontend` directory:
+Run frontend checks from the `frontend` directory:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-The frontend development server is available at `http://localhost:5173`. Set `VITE_API_URL=http://127.0.0.1:8000` for local development, or set it to the deployed API URL before building the frontend.
+## What's Not Included Yet
 
-### Verification checklist
+- Response-time (latency) tracking; checks currently record status and up/down state
+- Incident grouping; downtime appears as individual check rows rather than incidents with start, end, and duration
+- Multi-region checks
+- Real-time push updates through WebSockets
+- Comprehensive automated test coverage
+- Rate limiting and SSRF protection on the monitor URL field
 
-After starting the services, verify the local setup in this order:
+## What I Learned Building This
 
-1. Open `http://127.0.0.1:8000/` and confirm the API returns `PulseWatch is alive`.
-2. Open `http://localhost:5173` and create or sign in to an account.
-3. Add a monitor and confirm that its first check appears in the monitor history.
-4. Confirm the Celery worker logs the check and Celery Beat continues scheduling checks.
-5. Run both backend tests and frontend checks before pushing changes.
-
-## Project Structure
-
-```
-.
-├── app/                 # Backend application
-│   ├── celery_app.py    # Celery configuration
-│   ├── database.py      # Database connection & session
-│   ├── models.py        # SQLAlchemy ORM models
-│   ├── schemas.py       # Pydantic validation schemas
-│   ├── security.py      # JWT & password utilities
-│   ├── tasks.py         # URL checks and periodic task dispatch
-│   └── mail.py          # Email notification logic
-├── frontend/            # React + Vite frontend
-│   ├── src/
-│   │   ├── components/  # Reusable React components
-│   │   ├── pages/       # Page-level components
-│   │   └── lib/         # API client & utilities
-│   └── package.json
-├── alembic/             # Database migrations
-├── main.py              # FastAPI app entry point
-└── requirements.txt     # Python dependencies
-```
-
-## How It Works
-
-Users create an account, sign in, and add a URL to monitor. Celery Beat periodically queues checks, and a Celery worker requests each URL and stores the result. The dashboard shows monitor health, uptime, and history, while email alerts are sent when a monitor changes from healthy to down.
-
-## Troubleshooting
-
-- **Redis connection error**: Ensure Redis is running with `docker compose ps` and check `REDIS_URL`
-- **Database migration issues**: Check PostgreSQL is accessible, verify `DATABASE_URL`, and run `alembic upgrade head`
-- **Celery tasks not running**: Verify both worker and beat are active; check logs for errors
-- **Email not sending**: Confirm all SMTP settings in `.env`, including `MAIL_SERVER` and `MAIL_PORT`, and verify `MAIL_FROM` is valid
-- **Frontend cannot reach the API**: Confirm FastAPI is running on `http://127.0.0.1:8000` and that the browser is not blocking the request because of a missing CORS configuration
-- **No check history appears**: Confirm the monitor is active, the Celery worker is connected to Redis, and the target URL is reachable from the worker environment
+This was my first substantial project using FastAPI, SQLAlchemy, Alembic, Celery, JWT authentication, Docker, and React. Along the way, I diagnosed a passlib/bcrypt version conflict, separated async and sync database sessions for Celery, fixed a foreign-key cascade delete issue, resolved CORS configuration problems, and adapted a Celery-based architecture for free-tier deployment.
 
 ## License
 
-See LICENSE file for details.
+See [LICENSE](LICENSE) for details.
