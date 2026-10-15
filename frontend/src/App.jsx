@@ -13,6 +13,7 @@ import { ToastProvider } from "./lib/toast";
 import { AuthProvider } from "./lib/auth";
 import { MonitorsProvider } from "./lib/monitors";
 import { UiProvider } from "./lib/ui";
+import LandingPage from "./pages/LandingPage";
 
 function AuthenticatedShell() {
   return (
@@ -30,6 +31,7 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route
               path="/login"
               element={
