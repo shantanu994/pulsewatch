@@ -24,7 +24,7 @@ export default function Sidebar() {
 
   function handleLogout() {
     logout();
-    navigate("/login");
+    navigate("/");
   }
 
   const linkClass = ({ isActive }) =>
