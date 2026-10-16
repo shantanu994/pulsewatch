@@ -55,25 +55,46 @@ To keep the live demo functional without a paid worker, the production deploymen
 
 ## Local Development Setup
 
+### Prerequisites
+
+- Python 3.11 or newer
+- Node.js and npm
+- Docker Desktop (for local PostgreSQL and Redis)
+
+### Backend
+
 ```bash
 # clone and enter the repo
 git clone https://github.com/shantanu994/pulsewatch.git
 cd pulsewatch
 
-# backend setup
+# create and activate the virtual environment
 cp .env.example .env          # fill in your own values
 python -m venv venv
-venv\\Scripts\\activate       # or source venv/bin/activate on Mac/Linux
+venv\Scripts\activate         # Windows
+# source venv/bin/activate    # macOS/Linux
 pip install -r requirements.txt
+
+# start local PostgreSQL and Redis
 docker compose up -d          # starts Postgres + Redis
+
+# apply database migrations and start the API
 alembic upgrade head
 uvicorn main:app --reload
+```
 
-# in separate terminals:
+In separate terminals, start the local Celery worker and scheduler:
+
+```bash
 celery -A app.celery_app worker --loglevel=info --pool=solo
 celery -A app.celery_app beat --loglevel=info
+```
 
-# frontend setup, in a separate terminal
+### Frontend
+
+In another terminal:
+
+```bash
 cd frontend
 cp .env.example .env
 npm install
@@ -99,6 +120,10 @@ Do not commit `.env` files or real credentials.
 
 ## API Endpoints
 
+Protected endpoints require the JWT returned by `/auth/login` in an
+`Authorization: Bearer <token>` header. Monitor data is isolated to the
+authenticated user.
+
 ```text
 GET    /                         - service health
 POST   /auth/signup              - create account
@@ -115,9 +140,31 @@ GET    /monitors/{id}/results    - check history (protected)
 POST   /internal/trigger-checks  - run due checks for the external scheduler
 ```
 
+Example API flow:
+
+```bash
+# create an account
+curl -X POST http://127.0.0.1:8000/auth/signup ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"you@example.com\",\"password\":\"use-a-local-password\"}"
+
+# sign in and copy access_token from the response
+curl -X POST http://127.0.0.1:8000/auth/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"you@example.com\",\"password\":\"use-a-local-password\"}"
+
+# use the token on protected endpoints
+curl http://127.0.0.1:8000/monitors ^
+  -H "Authorization: Bearer <access_token>"
+```
+
+The commands above use Windows `cmd.exe` line continuation. On macOS/Linux,
+replace `^` with `\`.
+
 ## Testing
 
-The repository currently contains task smoke scripts rather than a comprehensive automated test suite:
+The repository currently contains task smoke scripts rather than a
+comprehensive automated test suite:
 
 ```bash
 pytest test_task.py test_downtime.py -v
